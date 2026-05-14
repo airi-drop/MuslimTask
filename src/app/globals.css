@@ -3,24 +3,45 @@
 @tailwind utilities;
 
 :root {
-  --bg: #F6EFDE;
+  --bg: #F4EFDE;
+  --bg-grid: 32px;
+}
+
+.dark {
+  --bg: #070F18;
+  --bg-grid: 36px;
 }
 
 html,
 body {
   background-color: var(--bg);
-  color: #172A1D;
+  color: #063D26;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Subtle dot grid that gives gaming-HUD vibe */
+  background-image: radial-gradient(circle at 1px 1px, rgba(15, 138, 87, 0.07) 1px, transparent 0);
+  background-size: var(--bg-grid) var(--bg-grid);
+}
+
+.dark body {
+  color: #E6F4ED;
+  background-image: radial-gradient(circle at 1px 1px, rgba(70, 242, 192, 0.06) 1px, transparent 0);
 }
 
 @layer components {
+  /* Light/dark aware card with subtle hairline border */
   .card {
-    @apply rounded-3xl bg-white shadow-card;
+    @apply rounded-3xl bg-white/90 ring-1 ring-emerald-100 shadow-card backdrop-blur;
+  }
+  .dark .card {
+    @apply bg-space-800/80 ring-emerald-900/60;
   }
 
-  .card-dark {
-    @apply rounded-3xl bg-forest-700 text-cream-50 shadow-card;
+  .card-feature {
+    @apply rounded-3xl bg-gradient-to-br from-emerald-700 via-emerald-800 to-emerald-950 text-parchment-50 shadow-card ring-1 ring-emerald-700/50;
+  }
+  .dark .card-feature {
+    @apply from-emerald-800 via-space-800 to-space-950 ring-emerald-900;
   }
 
   .pill {
@@ -28,19 +49,65 @@ body {
   }
 
   .stat-tile {
-    @apply rounded-2xl border border-cream-200/80 bg-cream-50 p-4;
+    @apply min-w-0 rounded-2xl border border-emerald-100/80 bg-parchment-50 p-3 sm:p-4;
+  }
+  .dark .stat-tile {
+    @apply border-emerald-900/60 bg-space-900/60;
+  }
+
+  /* HUD-style outline that gives a "gamified" frame */
+  .hud-frame {
+    position: relative;
+  }
+  .hud-frame::before,
+  .hud-frame::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: rgb(31 229 165 / 0.7);
+    border-style: solid;
+    pointer-events: none;
+  }
+  .hud-frame::before {
+    top: 8px;
+    left: 8px;
+    border-width: 2px 0 0 2px;
+    border-top-left-radius: 6px;
+  }
+  .hud-frame::after {
+    bottom: 8px;
+    right: 8px;
+    border-width: 0 2px 2px 0;
+    border-bottom-right-radius: 6px;
+  }
+
+  /* Reusable arabic text styling */
+  .arabic {
+    font-family: "Amiri", "Scheherazade New", serif;
+    line-height: 2;
+  }
+
+  /* Glow text used for level/streak numbers */
+  .text-glow-neon {
+    color: #46F2C0;
+    text-shadow: 0 0 24px rgba(70, 242, 192, 0.45);
+  }
+  .text-glow-amber {
+    color: #F5BE3D;
+    text-shadow: 0 0 24px rgba(245, 190, 61, 0.45);
   }
 }
 
-/* subtle scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(31, 53, 38, 0.18);
+  background: rgba(8, 84, 52, 0.18);
   border-radius: 999px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(31, 53, 38, 0.3);
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(70, 242, 192, 0.18);
 }
