@@ -8,7 +8,7 @@
  *   - Activate cleans up old cache versions
  */
 
-const VERSION = "v1.0.0";
+const VERSION = "v1.1.0";
 const CACHE_HTML = `mt-html-${VERSION}`;
 const CACHE_STATIC = `mt-static-${VERSION}`;
 const CACHE_DATA = `mt-data-${VERSION}`;
@@ -83,7 +83,14 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return; // skip cross-origin
+
+  // Allow caching of equran.id Quran API for offline reading.
+  if (url.host === "equran.id") {
+    event.respondWith(staleWhileRevalidate(req, CACHE_DATA));
+    return;
+  }
+
+  if (url.origin !== self.location.origin) return; // skip other cross-origin
 
   // Don't cache the manifest (let it always be fresh) or RSC payloads
   if (url.pathname === "/manifest.webmanifest") return;
@@ -131,6 +138,18 @@ async function cacheFirst(req, cacheName) {
   } catch (err) {
     return new Response("", { status: 504 });
   }
+}
+
+async function staleWhileRevalidate(req, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(req);
+  const fetchPromise = fetch(req)
+    .then((fresh) => {
+      if (fresh.ok) cache.put(req, fresh.clone());
+      return fresh;
+    })
+    .catch(() => null);
+  return cached || (await fetchPromise) || new Response("", { status: 504 });
 }
 
 self.addEventListener("message", (event) => {
