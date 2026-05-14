@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LocationPicker } from "@/components/LocationPicker";
 import { NextPrayerCard } from "@/components/NextPrayerCard";
+import { ShareCardButton } from "@/components/ShareCardButton";
 import { StatTile } from "@/components/StatTile";
 import {
   DEFAULT_LOCATION,
@@ -18,6 +19,7 @@ import {
   type Progress,
   EMPTY_PROGRESS,
 } from "@/lib/progress";
+import { formatGregorian, toHijri } from "@/lib/hijri";
 
 export function Dashboard() {
   const [location, setLocation] = useState<Location>(DEFAULT_LOCATION);
@@ -65,6 +67,25 @@ export function Dashboard() {
             <p className="mt-2 max-w-md text-sm text-parchment-100/80">
               Selesaikan quest ibadahmu hari ini. Kumpulkan XP, naik level, dan jaga streak-mu.
             </p>
+
+            <div className="mt-3">
+              <ShareCardButton
+                data={() => ({
+                  username: "Musafir",
+                  streak: progress.streak,
+                  bestStreak: progress.bestStreak,
+                  level,
+                  totalXp: progress.totalXp,
+                  todayXp: progress.todayXp,
+                  prayedCount,
+                  prayerTarget: TARGET_PRAYERS_PER_DAY,
+                  hijri: toHijri(new Date()).formatted,
+                  gregorian: formatGregorian(new Date()),
+                })}
+                className="!bg-emerald-950/40 !text-parchment-50 !border-emerald-800/60 hover:!bg-emerald-900"
+                label="Bagikan Progressku"
+              />
+            </div>
 
             {/* Level / XP HUD */}
             <div className="mt-5 flex items-center gap-4 rounded-2xl bg-emerald-950/40 p-3 ring-1 ring-emerald-800/60 backdrop-blur sm:p-4">
