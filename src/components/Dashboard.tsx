@@ -25,7 +25,6 @@ export function Dashboard() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from localStorage on mount.
   useEffect(() => {
     setLocation(loadLocation());
     setProgress(loadProgress());
@@ -33,12 +32,11 @@ export function Dashboard() {
   }, []);
 
   const today = useMemo(() => getTodayRecord(progress), [progress]);
-  const { level } = levelFromXp(progress.totalXp);
+  const { level, intoLevel, toNext } = levelFromXp(progress.totalXp);
   const prayedCount = today.prayers.length;
-  const prayedPct = Math.round(
-    (prayedCount / TARGET_PRAYERS_PER_DAY) * 100,
-  );
+  const prayedPct = Math.round((prayedCount / TARGET_PRAYERS_PER_DAY) * 100);
   const remaining = Math.max(0, TARGET_PRAYERS_PER_DAY - prayedCount);
+  const xpPct = Math.min(100, intoLevel);
 
   function pickLocation(loc: Location) {
     setLocation(loc);
@@ -46,77 +44,152 @@ export function Dashboard() {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-      {/* LEFT — Daily summary */}
-      <section className="card p-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm text-forest-500/80">Assalamu&apos;alaikum, Admin</p>
-            <h1 className="mt-1 font-display text-4xl font-bold text-forest-800 sm:text-5xl">
-              Dashboard Harian
-            </h1>
-            <p className="mt-2 text-sm text-forest-500/90">
-              Catat dan jaga konsistensi salatmu setiap hari.
-            </p>
-          </div>
-
-          <StreakBadge value={progress.streak} best={progress.bestStreak} />
+    <div className="grid gap-4 sm:gap-5 lg:grid-cols-12">
+      {/* HERO — full width, gaming-style HUD banner */}
+      <section className="card-feature relative col-span-full overflow-hidden p-5 sm:p-7">
+        {/* decorative background */}
+        <div className="pointer-events-none absolute inset-0 opacity-30">
+          <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-neon-500/30 blur-3xl" />
+          <div className="absolute -bottom-20 right-0 h-80 w-80 rounded-full bg-amber-400/20 blur-3xl" />
         </div>
+        <GeometricStar className="pointer-events-none absolute -right-6 -top-6 h-40 w-40 text-amber-400/30 animate-spin-slow sm:-right-2 sm:-top-2 sm:h-56 sm:w-56" />
 
-        {/* Target progress */}
-        <div className="mt-7">
-          <div className="flex items-end justify-between text-sm">
-            <div className="font-semibold text-forest-800">Target 5 Salat</div>
-            <div className="text-forest-500/90">
-              <span className="font-bold text-forest-700">{prayedPct}%</span>{" "}
-              {remaining > 0
-                ? `${remaining} salat lagi untuk menyelesaikan target hari ini.`
-                : "Target hari ini tercapai. MasyaAllah!"}
+        <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-center">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neon-400">
+              Assalamu&apos;alaikum, Musafir
+            </p>
+            <h1 className="mt-2 font-display text-3xl font-bold leading-tight text-parchment-50 sm:text-4xl lg:text-5xl">
+              Dashboard <span className="text-neon-400">Harian</span>
+            </h1>
+            <p className="mt-2 max-w-md text-sm text-parchment-100/80">
+              Selesaikan quest ibadahmu hari ini. Kumpulkan XP, naik level, dan jaga streak-mu.
+            </p>
+
+            {/* Level / XP HUD */}
+            <div className="mt-5 flex items-center gap-4 rounded-2xl bg-emerald-950/40 p-3 ring-1 ring-emerald-800/60 backdrop-blur sm:p-4">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 font-display text-lg font-bold text-emerald-950 shadow-glow-amber sm:h-14 sm:w-14 sm:text-xl">
+                Lv {level}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2 text-xs text-parchment-100/80">
+                  <span className="truncate">XP Level {level}</span>
+                  <span className="shrink-0">
+                    <span className="text-glow-neon font-display font-bold">
+                      {intoLevel}
+                    </span>
+                    <span className="text-parchment-100/50"> / 100</span>
+                  </span>
+                </div>
+                <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-emerald-950/80">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-neon-500 to-neon-400 transition-all"
+                    style={{ width: `${xpPct}%` }}
+                  />
+                </div>
+                <p className="mt-1.5 truncate text-[11px] text-parchment-100/60">
+                  {toNext} XP lagi untuk Level {level + 1}
+                </p>
+              </div>
             </div>
           </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-cream-200">
+
+          {/* Streak hero — distinct from screenshot's small badge */}
+          <div className="grid grid-cols-3 gap-3">
+            <HeroMetric
+              icon={<FlameIcon className="h-5 w-5" />}
+              label="Streak"
+              value={progress.streak}
+              suffix="hari"
+              accent="amber"
+            />
+            <HeroMetric
+              icon={<ShieldIcon className="h-5 w-5" />}
+              label="Nyawa"
+              value={progress.lives}
+              suffix={`/ 3`}
+              accent="neon"
+            />
+            <HeroMetric
+              icon={<TrophyIcon className="h-5 w-5" />}
+              label="Terbaik"
+              value={progress.bestStreak}
+              suffix="hari"
+              accent="amber"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* LEFT bento — quest target + checklist + stats */}
+      <section className="card relative col-span-full overflow-hidden p-5 sm:p-6 lg:col-span-7">
+        {/* Target progress */}
+        <div>
+          <div className="flex flex-wrap items-end justify-between gap-2 text-sm">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-widest text-emerald-600/70 dark:text-neon-500/70">
+                Quest Utama
+              </div>
+              <div className="font-display text-xl font-bold text-emerald-800 dark:text-parchment-50">
+                Target 5 Salat
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="font-display text-2xl font-bold text-emerald-800 dark:text-parchment-50">
+                {prayedPct}%
+              </div>
+              <div className="text-xs text-emerald-700/70 dark:text-parchment-100/70">
+                {remaining > 0
+                  ? `${remaining} salat lagi`
+                  : "Target tercapai!"}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-parchment-100 dark:bg-space-900">
             <div
-              className="h-full rounded-full bg-forest-600 transition-all"
+              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-neon-400 transition-all"
               style={{ width: `${prayedPct}%` }}
             />
           </div>
         </div>
 
-        {/* 4 stat tiles */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* Stat grid — responsive 2/4 cols */}
+        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
           <StatTile
             label="XP Hari Ini"
             value={
               <span>
-                {today.xp} <span className="text-base">XP</span>
+                {today.xp}
+                <span className="ml-1 text-sm">XP</span>
               </span>
             }
-            icon={<BoltIcon className="h-4 w-4" />}
-            accent="gold"
+            icon={<BoltIcon className="h-3.5 w-3.5" />}
+            accent="amber"
           />
           <StatTile
             label="Level"
             value={level}
-            icon={<LayersIcon className="h-4 w-4" />}
+            icon={<LayersIcon className="h-3.5 w-3.5" />}
+            accent="neon"
           />
           <StatTile
-            label="Salat Terlaksana"
-            value={`${prayedCount} / ${TARGET_PRAYERS_PER_DAY}`}
-            icon={<CheckIcon className="h-4 w-4" />}
+            label="Salat"
+            value={`${prayedCount}/${TARGET_PRAYERS_PER_DAY}`}
+            icon={<CheckIcon className="h-3.5 w-3.5" />}
           />
           <StatTile
             label="Total XP"
             value={
               <span>
-                {progress.totalXp} <span className="text-base">XP</span>
+                {progress.totalXp}
+                <span className="ml-1 text-sm">XP</span>
               </span>
             }
-            icon={<StarIcon className="h-4 w-4" />}
-            accent="gold"
+            icon={<StarIcon className="h-3.5 w-3.5" />}
+            accent="amber"
           />
         </div>
 
-        {/* Quick salat checklist */}
         <DailyChecklist
           progress={progress}
           onChange={setProgress}
@@ -124,14 +197,21 @@ export function Dashboard() {
         />
       </section>
 
-      {/* RIGHT — Next prayer + Streak protection */}
-      <div className="flex flex-col gap-5">
+      {/* RIGHT bento — Next prayer */}
+      <div className="col-span-full lg:col-span-5">
         <NextPrayerCard
           location={location}
           onChangeLocation={() => setPickerOpen(true)}
         />
-        <StreakProtectionCard lives={progress.lives} streak={progress.streak} />
       </div>
+
+      {/* Streak protection — full width */}
+      <section className="card col-span-full p-5 sm:p-6">
+        <StreakProtectionInner
+          lives={progress.lives}
+          streak={progress.streak}
+        />
+      </section>
 
       <LocationPicker
         open={pickerOpen}
@@ -143,73 +223,90 @@ export function Dashboard() {
   );
 }
 
-/* ---------- Sub-components ---------- */
+/* ------------------------------------------------------------ */
 
-function StreakBadge({ value, best }: { value: number; best: number }) {
+function HeroMetric({
+  icon,
+  label,
+  value,
+  suffix,
+  accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  suffix: string;
+  accent: "amber" | "neon";
+}) {
+  const valueClass =
+    accent === "amber" ? "text-glow-amber" : "text-glow-neon";
+  const iconClass =
+    accent === "amber"
+      ? "bg-amber-400/20 text-amber-300"
+      : "bg-neon-500/20 text-neon-400";
   return (
-    <div className="flex w-full max-w-[180px] flex-col items-center rounded-2xl border border-cream-200/80 bg-cream-50 p-4 text-center">
-      <div className="grid h-9 w-9 place-items-center rounded-full bg-gold-500/15 text-gold-500">
-        <FlameIcon className="h-4 w-4" />
+    <div className="min-w-0 rounded-2xl bg-emerald-950/40 p-3 ring-1 ring-emerald-800/60 backdrop-blur">
+      <div className={`grid h-8 w-8 place-items-center rounded-lg ${iconClass}`}>
+        {icon}
       </div>
-      <div className="mt-1 text-xs font-semibold text-forest-700/80">
-        Streak-mu
+      <div className="mt-2 truncate text-[10px] font-semibold uppercase tracking-widest text-parchment-100/60">
+        {label}
       </div>
-      <div className="font-display text-5xl font-bold text-forest-800">
+      <div className={`font-display text-2xl font-bold sm:text-3xl ${valueClass}`}>
         {value}
       </div>
-      <div className="text-xs text-forest-500/80">hari</div>
-      <div className="mt-1 rounded-full bg-cream-200/70 px-2.5 py-0.5 text-[11px] text-forest-600">
-        Terbaik: {best} hari
-      </div>
+      <div className="truncate text-[10px] text-parchment-100/60">{suffix}</div>
     </div>
   );
 }
 
-function StreakProtectionCard({
+function StreakProtectionInner({
   lives,
   streak,
 }: {
   lives: number;
   streak: number;
 }) {
-  const nextLifeIn = 7 - (streak % 7 || 0);
+  const nextLifeIn = streak === 0 ? 7 : 7 - (streak % 7 || 7);
   return (
-    <section className="card p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-forest-500/70">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-4">
+        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-neon-400">
+          <ShieldIcon className="h-6 w-6" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600/70 dark:text-neon-500/70">
             Streak Protection
           </div>
-          <h3 className="font-display text-2xl font-bold text-forest-800">
+          <h3 className="font-display text-xl font-bold text-emerald-800 dark:text-parchment-50 sm:text-2xl">
             Nyawa Streak
           </h3>
-          <p className="mt-1 text-sm text-forest-500/90">
+          <p className="mt-1 max-w-md text-sm text-emerald-700/80 dark:text-parchment-100/70">
             {lives > 0
               ? `Kamu punya ${lives} nyawa untuk menyelamatkan streak.`
               : "Selesaikan 7 hari berturut-turut untuk dapat 1 nyawa."}
           </p>
         </div>
-        <div className="grid h-12 w-12 place-items-center rounded-full bg-forest-100 text-forest-700">
-          <ShieldIcon className="h-6 w-6" />
-        </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
+      <div className="flex shrink-0 flex-col gap-2 sm:items-end">
         <div className="flex gap-1.5">
           {Array.from({ length: 3 }).map((_, i) => (
             <span
               key={i}
-              className={`h-3 w-3 rounded-full ${
-                i < lives ? "bg-gold-500" : "bg-cream-200"
+              className={`h-3 w-3 rounded-full transition ${
+                i < lives
+                  ? "bg-amber-400 shadow-glow-amber"
+                  : "bg-parchment-200 dark:bg-space-900"
               }`}
             />
           ))}
         </div>
-        <div className="text-xs text-forest-500/80">
+        <div className="text-xs text-emerald-700/70 dark:text-parchment-100/60">
           Nyawa berikutnya dalam {nextLifeIn} hari
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -233,15 +330,15 @@ function DailyChecklist({
 
   return (
     <div className="mt-6">
-      <div className="mb-3 flex items-center justify-between">
-        <h4 className="font-display text-lg font-bold text-forest-800">
-          Quest Harian — 5 Waktu Salat
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h4 className="font-display text-base font-bold text-emerald-800 dark:text-parchment-50 sm:text-lg">
+          Quest Salat 5 Waktu
         </h4>
-        <span className="text-xs text-forest-500/80">
-          Tap untuk tandai selesai
+        <span className="text-[11px] text-emerald-700/70 dark:text-parchment-100/60 sm:text-xs">
+          Tap untuk klaim XP
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         {items.map((it) => {
           const done = today.prayers.includes(it.key);
           return (
@@ -249,8 +346,6 @@ function DailyChecklist({
               key={it.key}
               disabled={disabled}
               onClick={() => {
-                // Toggle locally — saving wired up in next iteration.
-                // For scaffold demo, optimistic in-memory update only.
                 const nextPrayers = done
                   ? today.prayers.filter((p) => p !== it.key)
                   : [...today.prayers, it.key];
@@ -267,27 +362,29 @@ function DailyChecklist({
                   history: { ...progress.history, [today.date]: newToday },
                 });
               }}
-              className={`flex items-center justify-between rounded-2xl border px-3 py-3 text-left transition ${
+              className={`group flex min-w-0 items-center justify-between gap-2 rounded-2xl border px-3 py-3 text-left transition ${
                 done
-                  ? "border-forest-600 bg-forest-600 text-cream-50"
-                  : "border-cream-200 bg-white text-forest-700 hover:bg-cream-50"
+                  ? "border-neon-500/60 bg-gradient-to-br from-emerald-700 to-emerald-900 text-parchment-50 shadow-glow"
+                  : "border-emerald-100 bg-parchment-50 text-emerald-800 hover:border-emerald-200 hover:bg-white dark:border-emerald-900/60 dark:bg-space-900/60 dark:text-parchment-100 dark:hover:border-neon-500/40"
               } ${disabled ? "opacity-60" : ""}`}
             >
-              <div>
-                <div className="text-sm font-semibold">{it.name}</div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">{it.name}</div>
                 <div
-                  className={`text-[11px] ${
-                    done ? "text-cream-100/80" : "text-forest-500/80"
+                  className={`truncate text-[11px] ${
+                    done
+                      ? "text-neon-400"
+                      : "text-emerald-700/70 dark:text-parchment-100/60"
                   }`}
                 >
-                  {done ? "+10 XP" : "Belum"}
+                  {done ? "+10 XP klaim" : "Belum klaim"}
                 </div>
               </div>
               <span
-                className={`grid h-6 w-6 place-items-center rounded-full ${
+                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full transition ${
                   done
-                    ? "bg-cream-50 text-forest-700"
-                    : "bg-cream-100 text-forest-500/60"
+                    ? "bg-neon-400 text-emerald-950"
+                    : "bg-parchment-100 text-emerald-700/40 dark:bg-space-800 dark:text-parchment-100/30"
                 }`}
               >
                 <CheckIcon className="h-3.5 w-3.5" />
@@ -297,6 +394,22 @@ function DailyChecklist({
         })}
       </div>
     </div>
+  );
+}
+
+/* ------- decorative SVG ------- */
+
+function GeometricStar({ className }: { className?: string }) {
+  // 8-point Islamic star (Khatim Sulayman / Rub el Hizb stylized)
+  return (
+    <svg className={className} viewBox="0 0 100 100" fill="none">
+      <g stroke="currentColor" strokeWidth="1" opacity="0.9">
+        <path d="M50 5 65 35 95 50 65 65 50 95 35 65 5 50 35 35Z" />
+        <path d="M50 15 60 40 85 50 60 60 50 85 40 60 15 50 40 40Z" />
+        <circle cx="50" cy="50" r="20" />
+        <circle cx="50" cy="50" r="35" />
+      </g>
+    </svg>
   );
 }
 
@@ -319,14 +432,7 @@ function BoltIcon({ className }: { className?: string }) {
 }
 function LayersIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    >
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
       <path d="m12 3 9 5-9 5-9-5 9-5Z" />
       <path d="m3 13 9 5 9-5" />
       <path d="m3 18 9 5 9-5" />
@@ -335,15 +441,7 @@ function LayersIcon({ className }: { className?: string }) {
 }
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="m5 12 5 5 9-11" />
     </svg>
   );
@@ -355,17 +453,17 @@ function StarIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function TrophyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M17 5h3v3a3 3 0 0 1-3 3M7 5H4v3a3 3 0 0 0 3 3" />
+    </svg>
+  );
+}
 function ShieldIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z" />
       <path d="m9 12 2 2 4-4" />
     </svg>
