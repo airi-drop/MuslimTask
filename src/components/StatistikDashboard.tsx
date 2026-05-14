@@ -33,6 +33,7 @@ export function StatistikDashboard() {
         eyebrow="Statistik"
         title="Konsistensi Ibadah"
         description="Ritme ibadahmu dalam minggu dan bulan ini. Data dihitung dari riwayat checklist salat di Dashboard."
+        back={{ href: "/", label: "Dashboard" }}
       />
 
       {/* Highlight banner */}

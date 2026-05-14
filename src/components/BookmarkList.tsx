@@ -27,6 +27,7 @@ export function BookmarkList() {
         eyebrow="Mihrab / Al-Quran / Bookmark"
         title="Ayat Tersimpan"
         description="Ayat-ayat yang kamu tandai. Tap untuk kembali ke posisi bacaan."
+        back={{ href: "/mihrab/quran", label: "Daftar Surah" }}
       />
 
       <section className="card p-5 sm:p-6">

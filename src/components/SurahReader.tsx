@@ -178,6 +178,7 @@ export function SurahReader({ meta }: Props) {
         eyebrow={`Mihrab / Al-Quran / Surah ${meta.nomor}`}
         title={`${meta.namaLatin} — ${meta.arti}`}
         description={`${meta.jumlahAyat} ayat · diturunkan di ${meta.tempatTurun}. Buka surah sekali saat online untuk menyimpannya offline secara otomatis.`}
+        back={{ href: "/mihrab/quran", label: "Daftar Surah" }}
       />
 
       {/* Bismillah card (skip for At-Taubah) */}

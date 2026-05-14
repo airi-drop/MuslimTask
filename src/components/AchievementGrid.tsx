@@ -24,6 +24,7 @@ export function AchievementGrid() {
         eyebrow="Achievement"
         title="Pencapaianmu"
         description={`Kumpulkan badge sebagai milestone perjalananmu. ${unlocked} dari ${total} terbuka.`}
+        back={{ href: "/", label: "Dashboard" }}
       />
 
       <section className="card p-5 sm:p-6">

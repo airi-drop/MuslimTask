@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AchievementToast } from "@/components/AchievementToast";
 import { PageHeader } from "@/components/PageHeader";
@@ -10,16 +11,23 @@ import {
   getQuestState,
   type QuestDef,
   type QuestState,
-  type QuestStore,
 } from "@/lib/quests";
-import { addQuestXp } from "@/lib/progress";
+import {
+  TARGET_PRAYERS_PER_DAY,
+  addQuestXp,
+  getTodayRecord,
+} from "@/lib/progress";
 import { useMuslimState } from "@/lib/useMuslimState";
 
 type Tab = "daily" | "weekly";
 
+/** Quests whose progress comes from another source (not the quest store). */
+const SYNCED_QUEST_IDS = new Set(["salat-5"]);
+
 export function QuestBoard() {
   const {
     hydrated,
+    progress,
     quests,
     setQuests,
     setProgress,
@@ -31,23 +39,47 @@ export function QuestBoard() {
 
   const activeList = tab === "daily" ? DAILY_QUESTS : WEEKLY_QUESTS;
 
+  /**
+   * For "salat-5", current/done is derived from today's prayed count.
+   * For everything else, derive from the quest store.
+   */
+  function effectiveState(def: QuestDef): QuestState & { synced: boolean } {
+    if (def.id === "salat-5") {
+      const today = getTodayRecord(progress);
+      const count = Math.min(TARGET_PRAYERS_PER_DAY, today.prayers.length);
+      const done = count >= TARGET_PRAYERS_PER_DAY;
+      return {
+        id: def.id,
+        count,
+        done,
+        periodKey: today.date,
+        synced: true,
+      };
+    }
+    return { ...getQuestState(quests, def), synced: false };
+  }
+
   const stats = useMemo(() => {
-    const daily = DAILY_QUESTS.map((q) => getQuestState(quests, q));
-    const weekly = WEEKLY_QUESTS.map((q) => getQuestState(quests, q));
-    const dailyDone = daily.filter((s) => s.done).length;
-    const weeklyDone = weekly.filter((s) => s.done).length;
+    const dailyStates = DAILY_QUESTS.map((q) => effectiveState(q));
+    const weeklyStates = WEEKLY_QUESTS.map((q) => effectiveState(q));
+    const dailyDone = dailyStates.filter((s) => s.done).length;
+    const weeklyDone = weeklyStates.filter((s) => s.done).length;
     const dailyXp = DAILY_QUESTS.reduce(
-      (acc, q) => acc + (daily.find((s) => s.id === q.id)?.done ? q.xp : 0),
+      (acc, q) =>
+        acc + (dailyStates.find((s) => s.id === q.id)?.done ? q.xp : 0),
       0,
     );
     const weeklyXp = WEEKLY_QUESTS.reduce(
-      (acc, q) => acc + (weekly.find((s) => s.id === q.id)?.done ? q.xp : 0),
+      (acc, q) =>
+        acc + (weeklyStates.find((s) => s.id === q.id)?.done ? q.xp : 0),
       0,
     );
     return { dailyDone, weeklyDone, dailyXp, weeklyXp };
-  }, [quests]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quests, progress]);
 
   function increment(def: QuestDef) {
+    if (SYNCED_QUEST_IDS.has(def.id)) return; // synced quests can't be tapped here
     const current = getQuestState(quests, def);
     if (current.done) return;
     const nextCount = Math.min(def.target, current.count + 1);
@@ -65,6 +97,7 @@ export function QuestBoard() {
   }
 
   function reset(def: QuestDef) {
+    if (SYNCED_QUEST_IDS.has(def.id)) return;
     const current = getQuestState(quests, def);
     const wasDone = current.done;
     const next: QuestState = {
@@ -87,6 +120,7 @@ export function QuestBoard() {
         eyebrow="Quest"
         title="Papan Quest"
         description="Selesaikan misi harian & mingguan. Setiap quest selesai memberi XP — naikkan level, kumpulkan badge, jaga streak."
+        back={{ href: "/", label: "Dashboard" }}
       />
 
       <section className="grid gap-3 sm:grid-cols-2">
@@ -110,12 +144,13 @@ export function QuestBoard() {
 
       <section className="space-y-3">
         {activeList.map((q) => {
-          const s = getQuestState(quests, q);
+          const s = effectiveState(q);
           return (
             <QuestRow
               key={q.id}
               def={q}
               state={s}
+              synced={s.synced}
               disabled={!hydrated}
               onIncrement={() => increment(q)}
               onReset={() => reset(q)}
@@ -186,12 +221,14 @@ function SummaryTile({
 function QuestRow({
   def,
   state,
+  synced,
   onIncrement,
   onReset,
   disabled,
 }: {
   def: QuestDef;
   state: QuestState;
+  synced: boolean;
   onIncrement: () => void;
   onReset: () => void;
   disabled?: boolean;
@@ -220,17 +257,26 @@ function QuestRow({
             <h3 className="truncate font-display text-base font-bold text-emerald-800 dark:text-parchment-50 sm:text-lg">
               {def.title}
             </h3>
-            <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-300">
-              +{def.xp} XP
-            </span>
+            {!synced && (
+              <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-300">
+                +{def.xp} XP
+              </span>
+            )}
+            {synced && (
+              <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-900/60 dark:text-neon-400">
+                Sinkron Dashboard
+              </span>
+            )}
             {state.done && (
               <span className="shrink-0 rounded-full bg-neon-400/15 px-2 py-0.5 text-[11px] font-bold text-neon-600 dark:text-neon-400">
-                ✓ Klaim
+                ✓ Selesai
               </span>
             )}
           </div>
           <p className="mt-1 break-words text-sm text-emerald-700/80 dark:text-parchment-100/70">
-            {def.description}
+            {synced
+              ? "Tandai di Dashboard. Setiap salat memberi +10 XP — total 50 XP untuk 5 waktu."
+              : def.description}
           </p>
 
           <div className="mt-3 flex items-center gap-3">
@@ -251,7 +297,14 @@ function QuestRow({
         </div>
 
         <div className="flex w-full shrink-0 gap-2 sm:w-auto sm:flex-col">
-          {state.done ? (
+          {synced ? (
+            <Link
+              href="/"
+              className="flex-1 rounded-xl border border-emerald-100 bg-white px-3 py-2 text-center text-xs font-semibold text-emerald-700 transition hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100 dark:hover:bg-space-900 sm:flex-none"
+            >
+              Buka Dashboard →
+            </Link>
+          ) : state.done ? (
             <button
               onClick={onReset}
               disabled={disabled}
@@ -314,5 +367,3 @@ const ICONS: Record<string, (p: { className?: string }) => React.JSX.Element> = 
     </svg>
   ),
 };
-
-void ({} as QuestStore); // keep type used

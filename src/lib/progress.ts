@@ -18,7 +18,7 @@ export type DayRecord = {
 export type Progress = {
   streak: number;
   bestStreak: number;
-  lives: number; // "Nyawa Streak"
+  lives: number; // "Nyawa Streak" — pelindung saat lewatkan 1 hari
   totalXp: number;
   todayXp: number;
   history: Record<string, DayRecord>;
@@ -26,6 +26,13 @@ export type Progress = {
   unlockedAchievements: string[];
   /** Last time we recomputed — used to skip work if same minute. */
   lastRecomputed?: string;
+  /** Days (YYYY-MM-DD) where a life was spent to save the streak. */
+  livesSpentOn: string[];
+  /**
+   * Date keys of save events the user has *seen* (acknowledged the modal).
+   * Used so we only show "Streak diselamatkan" once per save.
+   */
+  saveEventsSeen: string[];
 };
 
 export const XP_PER_PRAYER = 10;
@@ -43,6 +50,8 @@ export const EMPTY_PROGRESS: Progress = {
   todayXp: 0,
   history: {},
   unlockedAchievements: [],
+  livesSpentOn: [],
+  saveEventsSeen: [],
 };
 
 /* ---------- Date helpers ---------- */
@@ -71,6 +80,8 @@ export function loadProgress(): Progress {
     ...p,
     history: p.history ?? {},
     unlockedAchievements: p.unlockedAchievements ?? [],
+    livesSpentOn: p.livesSpentOn ?? [],
+    saveEventsSeen: p.saveEventsSeen ?? [],
   };
   for (const key of Object.keys(migrated.history)) {
     const rec = migrated.history[key] as DayRecord & { xp?: number };
@@ -125,40 +136,44 @@ export function dayXp(rec: DayRecord): number {
 /* ---------- Streak / lives engine ---------- */
 
 /**
- * Compute streak from history alone, looking back from a given date.
- * A "complete" day = all 5 obligatory prayers marked.
+ * Compute streak / lives / save events from history alone.
  *
- * Lives logic:
- *   - The current streak is broken by the FIRST gap (incomplete + not lived).
- *   - For each gap day, we may "spend" a life if available — capping the
- *     consumption to the lives-pool the user has accumulated.
- *   - Lives are EARNED at every multiple of 7 in the streak (max 3).
+ * Algorithm (deterministic, idempotent):
+ *   1. Walk back day-by-day from today. Today only "counts" if it's complete;
+ *      otherwise we start counting from yesterday — today is in-progress and
+ *      shouldn't break the streak.
+ *   2. Earned lives are accumulated as the streak grows: every full 7th day
+ *      grants +1 life, capped at 3.
+ *   3. Spent lives are accumulated as we hit gaps: each incomplete day in
+ *      the streak path "costs" a life. If we run out of lives, streak ends.
+ *   4. The CURRENT lives balance = earned - spent. Save events list = the
+ *      gap days where a life was actually spent.
  */
 export function computeStreakAndLives(
   history: Record<string, DayRecord>,
   now: Date = new Date(),
-): { streak: number; bestStreak: number; lives: number } {
+): {
+  streak: number;
+  bestStreak: number;
+  lives: number;
+  livesSpentOn: string[];
+  /** YYYY-MM-DD of latest gap that was just covered by a life. */
+  latestSave: string | null;
+} {
   const livesCap = 3;
-  // Walk back day by day from yesterday (today is in-progress and shouldn't
-  // break a streak even if incomplete).
-  let lives = 0;
-  // We'll grant lives based on streak length; recompute purely.
-  let streak = 0;
-  let livesUsed = 0; // how many gaps we've covered
-
-  // First compute streak treating "today" as part of the streak only if complete.
   const todayK = todayKey(now);
   const todayRec = history[todayK];
   const todayComplete =
     todayRec && todayRec.prayers.length >= TARGET_PRAYERS_PER_DAY;
 
-  let cursor = new Date(now);
-  if (!todayComplete) {
-    // Skip today: streak is what was built up to yesterday.
-    cursor.setDate(cursor.getDate() - 1);
-  }
+  let streak = 0;
+  let earnedLives = 0;
+  let spentLives = 0;
+  const livesSpentOn: string[] = [];
 
-  // Walk backward up to a generous cap to keep this O(N) where N is reasonable.
+  let cursor = new Date(now);
+  if (!todayComplete) cursor.setDate(cursor.getDate() - 1);
+
   const MAX_LOOKBACK = 365 * 5;
   for (let i = 0; i < MAX_LOOKBACK; i++) {
     const k = todayKey(cursor);
@@ -168,27 +183,28 @@ export function computeStreakAndLives(
     if (complete) {
       streak += 1;
       // Award a life every 7 streak days, up to cap.
-      if (streak % 7 === 0 && lives < livesCap) {
-        lives = Math.min(livesCap, lives + 1);
+      if (streak % 7 === 0 && earnedLives - spentLives < livesCap) {
+        earnedLives += 1;
       }
       cursor.setDate(cursor.getDate() - 1);
       continue;
     }
 
-    // Incomplete day → try to spend a life.
-    if (lives > 0) {
-      lives -= 1;
-      livesUsed += 1;
+    // Incomplete day → can a life cover it?
+    if (earnedLives - spentLives > 0) {
+      spentLives += 1;
+      livesSpentOn.push(k);
       cursor.setDate(cursor.getDate() - 1);
       continue;
     }
     break;
   }
 
-  // Best streak = max contiguous full days anywhere in history (also use lives).
+  const lives = Math.max(0, earnedLives - spentLives);
   const bestStreak = computeBestStreak(history);
-  void livesUsed; // currently unused; reserved for future analytics
-  return { streak, bestStreak, lives };
+  const latestSave = livesSpentOn[0] ?? null; // most recent gap (we walked backward)
+
+  return { streak, bestStreak, lives, livesSpentOn, latestSave };
 }
 
 function computeBestStreak(history: Record<string, DayRecord>): number {
@@ -242,15 +258,16 @@ function totalXpFromHistory(history: Record<string, DayRecord>): number {
  * from the source of truth (history). Call after any history mutation.
  */
 export function recompute(p: Progress, now: Date = new Date()): Progress {
-  const { streak, bestStreak, lives } = computeStreakAndLives(p.history, now);
+  const r = computeStreakAndLives(p.history, now);
   const totalXp = totalXpFromHistory(p.history);
   const todayRec = getTodayRecord(p, now);
   const todayXp = dayXp(todayRec);
   return {
     ...p,
-    streak,
-    bestStreak: Math.max(bestStreak, p.bestStreak), // never regress best
-    lives,
+    streak: r.streak,
+    bestStreak: Math.max(r.bestStreak, p.bestStreak),
+    lives: r.lives,
+    livesSpentOn: r.livesSpentOn,
     totalXp,
     todayXp,
     lastRecomputed: now.toISOString(),
@@ -312,4 +329,21 @@ export function unlockAchievements(p: Progress, ids: string[]): Progress {
   const set = new Set(p.unlockedAchievements);
   for (const id of ids) set.add(id);
   return { ...p, unlockedAchievements: Array.from(set) };
+}
+
+/* ---------- Save event helpers ---------- */
+
+/**
+ * Returns life-saved events the user hasn't seen yet, so we can pop a
+ * one-time "Streak diselamatkan!" toast.
+ */
+export function unseenSaveEvents(p: Progress): string[] {
+  const seen = new Set(p.saveEventsSeen);
+  return p.livesSpentOn.filter((k) => !seen.has(k));
+}
+
+export function markSaveEventsSeen(p: Progress, ids: string[]): Progress {
+  if (ids.length === 0) return p;
+  const set = new Set([...p.saveEventsSeen, ...ids]);
+  return { ...p, saveEventsSeen: Array.from(set) };
 }

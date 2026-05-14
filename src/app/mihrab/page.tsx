@@ -35,6 +35,7 @@ export default function MihrabHubPage() {
         eyebrow="Mihrab"
         title="Ruang Mihrab"
         description="Konten ibadah harianmu — Al-Quran, doa, dzikir. Tersimpan offline. (Mihrab: ceruk pengingat arah kiblat dalam masjid.)"
+        back={{ href: "/", label: "Dashboard" }}
       />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

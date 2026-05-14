@@ -121,6 +121,7 @@ export function DzikirCounter() {
         eyebrow="Mihrab / Dzikir"
         title="Dzikir Harian"
         description="Wirid pagi, petang, dan setelah salat. Tap kartu untuk menghitung — counter tersimpan otomatis dan ter-reset tiap hari."
+        back={{ href: "/mihrab", label: "Mihrab" }}
       />
 
       {/* Tabs */}

@@ -41,7 +41,8 @@ export const DAILY_QUESTS: QuestDef[] = [
     kind: "daily",
     category: "salat",
     title: "Salat 5 Waktu",
-    description: "Selesaikan kelima salat fardhu hari ini.",
+    description:
+      "Selesaikan kelima salat fardhu hari ini. Tandai di Dashboard.",
     xp: 50,
     target: 5,
   },

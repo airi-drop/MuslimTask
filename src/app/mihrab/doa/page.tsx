@@ -61,6 +61,7 @@ export default function DoaPage() {
         eyebrow="Mihrab / Doa Harian"
         title="Doa Harian"
         description="Kumpulan doa untuk aktivitas sehari-hari. Tersimpan offline — bisa dibuka kapan saja."
+        back={{ href: "/mihrab", label: "Mihrab" }}
       />
 
       <section className="grid gap-4 sm:grid-cols-2">

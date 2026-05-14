@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   EMPTY_PROGRESS,
   loadProgress,
+  markSaveEventsSeen,
   saveProgress,
+  unseenSaveEvents,
   type Progress,
 } from "./progress";
 import {
@@ -25,6 +27,10 @@ import { STORAGE_KEYS, subscribeStorage } from "./storage";
  * Achievement unlocks are re-evaluated after every mutation; newly unlocked
  * IDs are appended to progress.unlockedAchievements and surfaced via the
  * `unlockedNow` field — components can show a toast or notification.
+ *
+ * Streak save events (lives consumed to cover missed days) are surfaced
+ * via `pendingSave` — the most recent unseen save date. Components can
+ * pop a toast and call acknowledgeSave() to persist it as seen.
  */
 export type MuslimState = {
   hydrated: boolean;
@@ -32,9 +38,12 @@ export type MuslimState = {
   quests: QuestStore;
   /** IDs unlocked since last `clearUnlockedNow()` call. */
   unlockedNow: string[];
+  /** YYYY-MM-DD of the most recent unseen save event, or null. */
+  pendingSave: string | null;
   setProgress: (mutator: (p: Progress) => Progress) => void;
   setQuests: (mutator: (q: QuestStore) => QuestStore) => void;
   clearUnlockedNow: () => void;
+  acknowledgeSave: () => void;
 };
 
 export function useMuslimState(): MuslimState {
@@ -115,13 +124,28 @@ export function useMuslimState(): MuslimState {
 
   const clearUnlockedNow = useCallback(() => setUnlockedNow([]), []);
 
+  /** Mark the most-recent unseen save event as seen (and persist). */
+  const acknowledgeSave = useCallback(() => {
+    const unseen = unseenSaveEvents(progressRef.current);
+    if (unseen.length === 0) return;
+    const updated = markSaveEventsSeen(progressRef.current, unseen);
+    saveProgress(updated);
+    setProgressState(updated);
+  }, []);
+
+  // The pending save = the most-recent unseen save date (or null).
+  const pendingUnseen = unseenSaveEvents(progress);
+  const pendingSave = pendingUnseen.length > 0 ? pendingUnseen[0] : null;
+
   return {
     hydrated,
     progress,
     quests,
     unlockedNow,
+    pendingSave,
     setProgress,
     setQuests,
     clearUnlockedNow,
+    acknowledgeSave,
   };
 }

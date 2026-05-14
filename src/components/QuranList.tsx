@@ -46,6 +46,7 @@ export function QuranList() {
         eyebrow="Mihrab / Al-Quran"
         title="Al-Quran Digital"
         description="114 surah lengkap dengan terjemahan Bahasa Indonesia. Surah yang sudah dibuka tersimpan otomatis untuk akses offline."
+        back={{ href: "/mihrab", label: "Mihrab" }}
       />
 
       {/* Last read banner */}
