@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { AchievementToast } from "@/components/AchievementToast";
 import { LocationPicker } from "@/components/LocationPicker";
 import { NextPrayerCard } from "@/components/NextPrayerCard";
 import { ShareCardButton } from "@/components/ShareCardButton";
@@ -12,25 +13,40 @@ import {
   type Location,
 } from "@/lib/location";
 import {
+  PRAYER_KEYS,
   TARGET_PRAYERS_PER_DAY,
   getTodayRecord,
   levelFromXp,
-  loadProgress,
-  type Progress,
-  EMPTY_PROGRESS,
+  markPrayer,
+  unmarkPrayer,
+  type PrayerKey,
 } from "@/lib/progress";
 import { formatGregorian, toHijri } from "@/lib/hijri";
+import { useMuslimState } from "@/lib/useMuslimState";
+import { useEffect } from "react";
+
+const PRAYER_LABELS: Record<PrayerKey, string> = {
+  fajr: "Subuh",
+  dhuhr: "Dzuhur",
+  asr: "Ashar",
+  maghrib: "Maghrib",
+  isha: "Isya",
+};
 
 export function Dashboard() {
+  const {
+    hydrated,
+    progress,
+    setProgress,
+    unlockedNow,
+    clearUnlockedNow,
+  } = useMuslimState();
+
   const [location, setLocation] = useState<Location>(DEFAULT_LOCATION);
-  const [progress, setProgress] = useState<Progress>(EMPTY_PROGRESS);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setLocation(loadLocation());
-    setProgress(loadProgress());
-    setHydrated(true);
   }, []);
 
   const today = useMemo(() => getTodayRecord(progress), [progress]);
@@ -45,11 +61,21 @@ export function Dashboard() {
     saveLocation(loc);
   }
 
+  function togglePrayer(key: PrayerKey) {
+    setProgress((p) => {
+      const todayRec = getTodayRecord(p);
+      return todayRec.prayers.includes(key)
+        ? unmarkPrayer(p, key)
+        : markPrayer(p, key);
+    });
+  }
+
   return (
     <div className="grid gap-4 sm:gap-5 lg:grid-cols-12">
-      {/* HERO — full width, gaming-style HUD banner */}
+      <AchievementToast ids={unlockedNow} onDismiss={clearUnlockedNow} />
+
+      {/* HERO */}
       <section className="card-feature relative col-span-full overflow-hidden p-5 sm:p-7">
-        {/* decorative background */}
         <div className="pointer-events-none absolute inset-0 opacity-30">
           <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-neon-500/30 blur-3xl" />
           <div className="absolute -bottom-20 right-0 h-80 w-80 rounded-full bg-amber-400/20 blur-3xl" />
@@ -87,7 +113,6 @@ export function Dashboard() {
               />
             </div>
 
-            {/* Level / XP HUD */}
             <div className="mt-5 flex items-center gap-4 rounded-2xl bg-emerald-950/40 p-3 ring-1 ring-emerald-800/60 backdrop-blur sm:p-4">
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 font-display text-lg font-bold text-emerald-950 shadow-glow-amber sm:h-14 sm:w-14 sm:text-xl">
                 Lv {level}
@@ -115,7 +140,6 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Streak hero — distinct from screenshot's small badge */}
           <div className="grid grid-cols-3 gap-3">
             <HeroMetric
               icon={<FlameIcon className="h-5 w-5" />}
@@ -142,9 +166,8 @@ export function Dashboard() {
         </div>
       </section>
 
-      {/* LEFT bento — quest target + checklist + stats */}
+      {/* LEFT bento */}
       <section className="card relative col-span-full overflow-hidden p-5 sm:p-6 lg:col-span-7">
-        {/* Target progress */}
         <div>
           <div className="flex flex-wrap items-end justify-between gap-2 text-sm">
             <div>
@@ -174,13 +197,12 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Stat grid — responsive 2/4 cols */}
         <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
           <StatTile
             label="XP Hari Ini"
             value={
               <span>
-                {today.xp}
+                {progress.todayXp}
                 <span className="ml-1 text-sm">XP</span>
               </span>
             }
@@ -211,14 +233,59 @@ export function Dashboard() {
           />
         </div>
 
-        <DailyChecklist
-          progress={progress}
-          onChange={setProgress}
-          disabled={!hydrated}
-        />
+        <div className="mt-6">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h4 className="font-display text-base font-bold text-emerald-800 dark:text-parchment-50 sm:text-lg">
+              Quest Salat 5 Waktu
+            </h4>
+            <span className="text-[11px] text-emerald-700/70 dark:text-parchment-100/60 sm:text-xs">
+              Tap untuk klaim XP
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            {PRAYER_KEYS.map((key) => {
+              const done = today.prayers.includes(key);
+              return (
+                <button
+                  key={key}
+                  disabled={!hydrated}
+                  onClick={() => togglePrayer(key)}
+                  className={`group flex min-w-0 items-center justify-between gap-2 rounded-2xl border px-3 py-3 text-left transition ${
+                    done
+                      ? "border-neon-500/60 bg-gradient-to-br from-emerald-700 to-emerald-900 text-parchment-50 shadow-glow"
+                      : "border-emerald-100 bg-parchment-50 text-emerald-800 hover:border-emerald-200 hover:bg-white dark:border-emerald-900/60 dark:bg-space-900/60 dark:text-parchment-100 dark:hover:border-neon-500/40"
+                  } ${!hydrated ? "opacity-60" : ""}`}
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold">
+                      {PRAYER_LABELS[key]}
+                    </div>
+                    <div
+                      className={`truncate text-[11px] ${
+                        done
+                          ? "text-neon-400"
+                          : "text-emerald-700/70 dark:text-parchment-100/60"
+                      }`}
+                    >
+                      {done ? "+10 XP klaim" : "Belum klaim"}
+                    </div>
+                  </div>
+                  <span
+                    className={`grid h-6 w-6 shrink-0 place-items-center rounded-full transition ${
+                      done
+                        ? "bg-neon-400 text-emerald-950"
+                        : "bg-parchment-100 text-emerald-700/40 dark:bg-space-800 dark:text-parchment-100/30"
+                    }`}
+                  >
+                    <CheckIcon className="h-3.5 w-3.5" />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
-      {/* RIGHT bento — Next prayer */}
       <div className="col-span-full lg:col-span-5">
         <NextPrayerCard
           location={location}
@@ -226,7 +293,6 @@ export function Dashboard() {
         />
       </div>
 
-      {/* Streak protection — full width */}
       <section className="card col-span-full p-5 sm:p-6">
         <StreakProtectionInner
           lives={progress.lives}
@@ -331,97 +397,9 @@ function StreakProtectionInner({
   );
 }
 
-function DailyChecklist({
-  progress,
-  onChange,
-  disabled,
-}: {
-  progress: Progress;
-  onChange: (p: Progress) => void;
-  disabled?: boolean;
-}) {
-  const today = getTodayRecord(progress);
-  const items = [
-    { key: "fajr", name: "Subuh" },
-    { key: "dhuhr", name: "Dzuhur" },
-    { key: "asr", name: "Ashar" },
-    { key: "maghrib", name: "Maghrib" },
-    { key: "isha", name: "Isya" },
-  ] as const;
-
-  return (
-    <div className="mt-6">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h4 className="font-display text-base font-bold text-emerald-800 dark:text-parchment-50 sm:text-lg">
-          Quest Salat 5 Waktu
-        </h4>
-        <span className="text-[11px] text-emerald-700/70 dark:text-parchment-100/60 sm:text-xs">
-          Tap untuk klaim XP
-        </span>
-      </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        {items.map((it) => {
-          const done = today.prayers.includes(it.key);
-          return (
-            <button
-              key={it.key}
-              disabled={disabled}
-              onClick={() => {
-                const nextPrayers = done
-                  ? today.prayers.filter((p) => p !== it.key)
-                  : [...today.prayers, it.key];
-                const xpDelta = (done ? -1 : 1) * 10;
-                const newToday = {
-                  ...today,
-                  prayers: nextPrayers,
-                  xp: Math.max(0, today.xp + xpDelta),
-                };
-                onChange({
-                  ...progress,
-                  todayXp: Math.max(0, progress.todayXp + xpDelta),
-                  totalXp: Math.max(0, progress.totalXp + xpDelta),
-                  history: { ...progress.history, [today.date]: newToday },
-                });
-              }}
-              className={`group flex min-w-0 items-center justify-between gap-2 rounded-2xl border px-3 py-3 text-left transition ${
-                done
-                  ? "border-neon-500/60 bg-gradient-to-br from-emerald-700 to-emerald-900 text-parchment-50 shadow-glow"
-                  : "border-emerald-100 bg-parchment-50 text-emerald-800 hover:border-emerald-200 hover:bg-white dark:border-emerald-900/60 dark:bg-space-900/60 dark:text-parchment-100 dark:hover:border-neon-500/40"
-              } ${disabled ? "opacity-60" : ""}`}
-            >
-              <div className="min-w-0">
-                <div className="truncate text-sm font-semibold">{it.name}</div>
-                <div
-                  className={`truncate text-[11px] ${
-                    done
-                      ? "text-neon-400"
-                      : "text-emerald-700/70 dark:text-parchment-100/60"
-                  }`}
-                >
-                  {done ? "+10 XP klaim" : "Belum klaim"}
-                </div>
-              </div>
-              <span
-                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full transition ${
-                  done
-                    ? "bg-neon-400 text-emerald-950"
-                    : "bg-parchment-100 text-emerald-700/40 dark:bg-space-800 dark:text-parchment-100/30"
-                }`}
-              >
-                <CheckIcon className="h-3.5 w-3.5" />
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 /* ------- decorative SVG ------- */
 
 function GeometricStar({ className }: { className?: string }) {
-  // 8-point Islamic star (Khatim Sulayman / Rub el Hizb stylized)
   return (
     <svg className={className} viewBox="0 0 100 100" fill="none">
       <g stroke="currentColor" strokeWidth="1" opacity="0.9">
@@ -433,8 +411,6 @@ function GeometricStar({ className }: { className?: string }) {
     </svg>
   );
 }
-
-/* ---------- Icons ---------- */
 
 function FlameIcon({ className }: { className?: string }) {
   return (

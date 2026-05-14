@@ -1,39 +1,39 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { AchievementToast } from "@/components/AchievementToast";
 import { PageHeader } from "@/components/PageHeader";
 import {
   DAILY_QUESTS,
   WEEKLY_QUESTS,
   applyQuestState,
   getQuestState,
-  loadQuests,
-  saveQuests,
   type QuestDef,
   type QuestState,
   type QuestStore,
 } from "@/lib/quests";
-import { loadProgress, saveProgress, type Progress, EMPTY_PROGRESS } from "@/lib/progress";
+import { addQuestXp } from "@/lib/progress";
+import { useMuslimState } from "@/lib/useMuslimState";
 
 type Tab = "daily" | "weekly";
 
 export function QuestBoard() {
-  const [tab, setTab] = useState<Tab>("daily");
-  const [store, setStore] = useState<QuestStore>({ daily: {}, weekly: {} });
-  const [progress, setProgress] = useState<Progress>(EMPTY_PROGRESS);
-  const [hydrated, setHydrated] = useState(false);
+  const {
+    hydrated,
+    quests,
+    setQuests,
+    setProgress,
+    unlockedNow,
+    clearUnlockedNow,
+  } = useMuslimState();
 
-  useEffect(() => {
-    setStore(loadQuests());
-    setProgress(loadProgress());
-    setHydrated(true);
-  }, []);
+  const [tab, setTab] = useState<Tab>("daily");
 
   const activeList = tab === "daily" ? DAILY_QUESTS : WEEKLY_QUESTS;
 
   const stats = useMemo(() => {
-    const daily = DAILY_QUESTS.map((q) => getQuestState(store, q));
-    const weekly = WEEKLY_QUESTS.map((q) => getQuestState(store, q));
+    const daily = DAILY_QUESTS.map((q) => getQuestState(quests, q));
+    const weekly = WEEKLY_QUESTS.map((q) => getQuestState(quests, q));
     const dailyDone = daily.filter((s) => s.done).length;
     const weeklyDone = weekly.filter((s) => s.done).length;
     const dailyXp = DAILY_QUESTS.reduce(
@@ -45,10 +45,10 @@ export function QuestBoard() {
       0,
     );
     return { dailyDone, weeklyDone, dailyXp, weeklyXp };
-  }, [store]);
+  }, [quests]);
 
   function increment(def: QuestDef) {
-    const current = getQuestState(store, def);
+    const current = getQuestState(quests, def);
     if (current.done) return;
     const nextCount = Math.min(def.target, current.count + 1);
     const justDone = nextCount >= def.target;
@@ -58,23 +58,14 @@ export function QuestBoard() {
       done: justDone,
       claimedAt: justDone ? new Date().toISOString() : current.claimedAt,
     };
-    const nextStore = applyQuestState(store, def, next);
-    setStore(nextStore);
-    saveQuests(nextStore);
-
+    setQuests((s) => applyQuestState(s, def, next));
     if (justDone) {
-      const nextProgress: Progress = {
-        ...progress,
-        totalXp: progress.totalXp + def.xp,
-        todayXp: progress.todayXp + def.xp,
-      };
-      setProgress(nextProgress);
-      saveProgress(nextProgress);
+      setProgress((p) => addQuestXp(p, def.xp));
     }
   }
 
   function reset(def: QuestDef) {
-    const current = getQuestState(store, def);
+    const current = getQuestState(quests, def);
     const wasDone = current.done;
     const next: QuestState = {
       ...current,
@@ -82,30 +73,22 @@ export function QuestBoard() {
       done: false,
       claimedAt: undefined,
     };
-    const nextStore = applyQuestState(store, def, next);
-    setStore(nextStore);
-    saveQuests(nextStore);
+    setQuests((s) => applyQuestState(s, def, next));
     if (wasDone) {
-      // Reverse the XP grant so totals stay consistent.
-      const nextProgress: Progress = {
-        ...progress,
-        totalXp: Math.max(0, progress.totalXp - def.xp),
-        todayXp: Math.max(0, progress.todayXp - def.xp),
-      };
-      setProgress(nextProgress);
-      saveProgress(nextProgress);
+      setProgress((p) => addQuestXp(p, -def.xp));
     }
   }
 
   return (
     <div className="space-y-4 sm:space-y-5">
+      <AchievementToast ids={unlockedNow} onDismiss={clearUnlockedNow} />
+
       <PageHeader
         eyebrow="Quest"
         title="Papan Quest"
         description="Selesaikan misi harian & mingguan. Setiap quest selesai memberi XP — naikkan level, kumpulkan badge, jaga streak."
       />
 
-      {/* Summary */}
       <section className="grid gap-3 sm:grid-cols-2">
         <SummaryTile
           tab="daily"
@@ -127,7 +110,7 @@ export function QuestBoard() {
 
       <section className="space-y-3">
         {activeList.map((q) => {
-          const s = getQuestState(store, q);
+          const s = getQuestState(quests, q);
           return (
             <QuestRow
               key={q.id}
@@ -250,7 +233,6 @@ function QuestRow({
             {def.description}
           </p>
 
-          {/* Progress bar */}
           <div className="mt-3 flex items-center gap-3">
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-parchment-100 dark:bg-space-900">
               <div
@@ -268,7 +250,6 @@ function QuestRow({
           </div>
         </div>
 
-        {/* Action */}
         <div className="flex w-full shrink-0 gap-2 sm:w-auto sm:flex-col">
           {state.done ? (
             <button
@@ -292,8 +273,6 @@ function QuestRow({
     </article>
   );
 }
-
-/* ---------- Category icons ---------- */
 
 const ICONS: Record<string, (p: { className?: string }) => React.JSX.Element> = {
   salat: ({ className }) => (
@@ -335,3 +314,5 @@ const ICONS: Record<string, (p: { className?: string }) => React.JSX.Element> = 
     </svg>
   ),
 };
+
+void ({} as QuestStore); // keep type used
