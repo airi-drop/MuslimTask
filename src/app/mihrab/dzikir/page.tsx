@@ -44,51 +44,55 @@ const PAGI_PETANG: Wirid[] = [
 
 export default function DzikirPage() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <PageHeader
-        eyebrow="Spiritual / Dzikir"
+        eyebrow="Mihrab / Dzikir"
         title="Dzikir Pagi & Petang"
-        description="Wirid harian dari sumber Al-Ma'tsurat dan Hisnul Muslim. Penghitung otomatis akan ditambahkan pada iterasi berikutnya."
+        description="Wirid harian dari Al-Ma'tsurat dan Hisnul Muslim. Penghitung tap-to-count akan ditambahkan pada iterasi berikutnya."
       />
 
       <div className="flex flex-wrap gap-2">
-        <span className="pill bg-forest-700 text-cream-50">Pagi</span>
-        <span className="pill border border-cream-200 bg-white text-forest-700">
+        <span className="pill bg-emerald-700 text-parchment-50 shadow-glow dark:bg-emerald-600">Pagi</span>
+        <span className="pill border border-emerald-100 bg-white text-emerald-700 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100">
           Petang
         </span>
-        <span className="pill border border-cream-200 bg-white text-forest-700">
+        <span className="pill border border-emerald-100 bg-white text-emerald-700 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100">
           Setelah Salat
         </span>
       </div>
 
       <section className="space-y-4">
         {PAGI_PETANG.map((w, i) => (
-          <article key={w.id} className="card p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="grid h-9 w-9 place-items-center rounded-full bg-forest-100 text-forest-700 font-display font-bold">
+          <article key={w.id} className="card min-w-0 p-5 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-100 font-display font-bold text-emerald-700 dark:bg-emerald-900/60 dark:text-neon-400">
                   {i + 1}
                 </div>
-                <div className="text-sm font-semibold text-forest-700/80">
+                <div className="text-sm font-semibold text-emerald-700/80 dark:text-parchment-100/70">
                   Dibaca {w.count}x
                 </div>
               </div>
               <button
-                className="pill border border-cream-200 bg-white text-forest-700 hover:bg-cream-100"
+                className="pill shrink-0 border border-emerald-100 bg-white text-emerald-700 hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100"
                 aria-label="Hitung"
               >
                 <span className="font-display text-lg font-bold">0</span>
-                <span className="text-xs text-forest-500/70">/ {w.count}</span>
+                <span className="text-xs text-emerald-700/60 dark:text-parchment-100/50">
+                  / {w.count}
+                </span>
               </button>
             </div>
             <p
-              className="mt-4 text-right font-display text-3xl leading-loose text-forest-700"
+              className="arabic mt-4 break-words text-right text-2xl leading-loose text-emerald-700 dark:text-parchment-50 sm:text-3xl"
               dir="rtl"
             >
               {w.arabic}
             </p>
-            <p className="mt-3 text-sm italic text-forest-500/90">{w.latin}</p>
-            <p className="mt-2 text-sm text-forest-700/90">
+            <p className="mt-3 break-words text-sm italic text-emerald-700/80 dark:text-parchment-100/70">
+              {w.latin}
+            </p>
+            <p className="mt-2 break-words text-sm text-emerald-800 dark:text-parchment-100/90">
               <span className="font-semibold">Artinya:</span> {w.translation}
             </p>
           </article>

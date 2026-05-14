@@ -14,8 +14,7 @@ const DOA_LIST: Doa[] = [
     title: "Doa Bangun Tidur",
     arabic:
       "الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ",
-    latin:
-      "Alhamdulillahil-ladzi ahyana ba'da ma amatana wa ilaihin-nusyur.",
+    latin: "Alhamdulillahil-ladzi ahyana ba'da ma amatana wa ilaihin-nusyur.",
     translation:
       "Segala puji bagi Allah yang telah menghidupkan kami setelah mematikan kami, dan kepada-Nya kami akan dibangkitkan.",
   },
@@ -24,8 +23,7 @@ const DOA_LIST: Doa[] = [
     title: "Doa Sebelum Makan",
     arabic:
       "اللَّهُمَّ بَارِكْ لَنَا فِيمَا رَزَقْتَنَا وَقِنَا عَذَابَ النَّارِ",
-    latin:
-      "Allahumma bariklana fima razaqtana waqina 'adzaban-nar.",
+    latin: "Allahumma bariklana fima razaqtana waqina 'adzaban-nar.",
     translation:
       "Ya Allah, berkahilah kami dalam rezeki yang Engkau berikan dan jagalah kami dari siksa api neraka.",
   },
@@ -34,8 +32,7 @@ const DOA_LIST: Doa[] = [
     title: "Doa Sesudah Makan",
     arabic:
       "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا وَجَعَلَنَا مُسْلِمِينَ",
-    latin:
-      "Alhamdulillahil-ladzi ath'amana wa saqana wa ja'alana muslimin.",
+    latin: "Alhamdulillahil-ladzi ath'amana wa saqana wa ja'alana muslimin.",
     translation:
       "Segala puji bagi Allah yang telah memberi kami makan dan minum serta menjadikan kami sebagai muslim.",
   },
@@ -44,8 +41,7 @@ const DOA_LIST: Doa[] = [
     title: "Doa Keluar Rumah",
     arabic:
       "بِسْمِ اللَّهِ تَوَكَّلْتُ عَلَى اللَّهِ لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
-    latin:
-      "Bismillahi tawakkaltu 'alallah, la haula wa la quwwata illa billah.",
+    latin: "Bismillahi tawakkaltu 'alallah, la haula wa la quwwata illa billah.",
     translation:
       "Dengan nama Allah, aku bertawakkal kepada Allah. Tiada daya dan kekuatan kecuali dengan pertolongan Allah.",
   },
@@ -60,27 +56,29 @@ const DOA_LIST: Doa[] = [
 
 export default function DoaPage() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <PageHeader
-        eyebrow="Spiritual / Doa Harian"
+        eyebrow="Mihrab / Doa Harian"
         title="Doa Harian"
         description="Kumpulan doa untuk aktivitas sehari-hari. Tersimpan offline — bisa dibuka kapan saja."
       />
 
       <section className="grid gap-4 sm:grid-cols-2">
         {DOA_LIST.map((d) => (
-          <article key={d.id} className="card p-6">
-            <h2 className="font-display text-lg font-bold text-forest-800">
+          <article key={d.id} className="card min-w-0 p-5 sm:p-6">
+            <h2 className="font-display text-base font-bold text-emerald-800 dark:text-parchment-50 sm:text-lg">
               {d.title}
             </h2>
             <p
-              className="mt-3 text-right font-display text-2xl leading-loose text-forest-700"
+              className="arabic mt-3 break-words text-right text-xl text-emerald-700 dark:text-parchment-50 sm:text-2xl"
               dir="rtl"
             >
               {d.arabic}
             </p>
-            <p className="mt-3 text-sm italic text-forest-500/90">{d.latin}</p>
-            <p className="mt-2 text-sm text-forest-700/90">
+            <p className="mt-3 break-words text-sm italic text-emerald-700/80 dark:text-parchment-100/70">
+              {d.latin}
+            </p>
+            <p className="mt-2 break-words text-sm text-emerald-800 dark:text-parchment-100/90">
               <span className="font-semibold">Artinya:</span> {d.translation}
             </p>
           </article>

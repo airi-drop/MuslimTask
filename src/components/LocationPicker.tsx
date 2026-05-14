@@ -39,35 +39,28 @@ export function LocationPicker({ open, current, onClose, onPick }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-forest-900/40 px-4"
+      className="fixed inset-0 z-50 grid place-items-end bg-emerald-950/60 px-3 py-3 sm:place-items-center sm:px-4"
       onClick={onClose}
     >
       <div
-        className="card w-full max-w-md p-5"
+        className="card hud-frame max-h-[90vh] w-full max-w-md overflow-y-auto p-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="font-display text-xl font-bold text-forest-800">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="font-display text-lg font-bold text-emerald-800 dark:text-parchment-50 sm:text-xl">
               Pilih Lokasi
             </h2>
-            <p className="text-sm text-forest-500/80">
+            <p className="text-xs text-emerald-700/70 dark:text-parchment-100/60 sm:text-sm">
               Lokasi dipakai untuk menghitung jadwal salat secara offline.
             </p>
           </div>
           <button
             aria-label="Tutup"
             onClick={onClose}
-            className="rounded-full p-1 text-forest-700 hover:bg-cream-100"
+            className="shrink-0 rounded-full p-1 text-emerald-700 hover:bg-parchment-100 dark:text-parchment-100 dark:hover:bg-space-900"
           >
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M6 6l12 12M18 6 6 18" />
             </svg>
           </button>
@@ -76,32 +69,24 @@ export function LocationPicker({ open, current, onClose, onPick }: Props) {
         <button
           onClick={handleGps}
           disabled={loading}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-forest-700 px-4 py-3 font-semibold text-cream-50 shadow-card hover:bg-forest-600 disabled:opacity-60"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-800 px-4 py-3 font-semibold text-parchment-50 shadow-glow ring-1 ring-emerald-700 transition hover:from-emerald-500 hover:to-emerald-700 disabled:opacity-60"
         >
-          <svg
-            className="h-5 w-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 22s8-7 8-13a8 8 0 1 0-16 0c0 6 8 13 8 13Z" />
             <circle cx="12" cy="9" r="3" />
           </svg>
-          {loading ? "Mendeteksi lokasi…" : "Gunakan Lokasi GPS Saat Ini"}
+          <span className="truncate">
+            {loading ? "Mendeteksi lokasi…" : "Gunakan Lokasi GPS Saat Ini"}
+          </span>
         </button>
 
-        {error && (
-          <p className="mt-2 text-sm text-red-600">{error}</p>
-        )}
+        {error && <p className="mt-2 text-sm text-amber-500">{error}</p>}
 
         <div className="mt-5">
-          <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-forest-500/70">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-emerald-600/70 dark:text-neon-500/70">
             Kota Populer
           </div>
-          <ul className="max-h-64 space-y-1 overflow-y-auto pr-1">
+          <ul className="space-y-1">
             {PRESET_CITIES.map((c) => {
               const active =
                 current.latitude === c.latitude &&
@@ -113,22 +98,22 @@ export function LocationPicker({ open, current, onClose, onPick }: Props) {
                       onPick(c);
                       onClose();
                     }}
-                    className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition ${
+                    className={`flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left transition ${
                       active
-                        ? "bg-forest-100 text-forest-800"
-                        : "hover:bg-cream-100"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-parchment-50"
+                        : "hover:bg-parchment-50 dark:hover:bg-space-900"
                     }`}
                   >
-                    <div>
-                      <div className="font-semibold text-forest-800">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-emerald-800 dark:text-parchment-50">
                         {c.city}
                       </div>
-                      <div className="text-xs text-forest-500/80">
+                      <div className="truncate text-xs text-emerald-700/70 dark:text-parchment-100/60">
                         {c.region}
                       </div>
                     </div>
                     {active && (
-                      <span className="text-sm font-semibold text-forest-600">
+                      <span className="shrink-0 text-xs font-semibold text-neon-600 dark:text-neon-400">
                         Aktif
                       </span>
                     )}
