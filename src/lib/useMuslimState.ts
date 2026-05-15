@@ -29,8 +29,8 @@ import { STORAGE_KEYS, subscribeStorage } from "./storage";
  * `unlockedNow` field — components can show a toast or notification.
  *
  * Streak save events (lives consumed to cover missed days) are surfaced
- * via `pendingSave` — the most recent unseen save date. Components can
- * pop a toast and call acknowledgeSave() to persist it as seen.
+ * via `pendingSaves` — all unseen save dates. Components can pop stacked
+ * toasts and call acknowledgeSave() to persist all as seen.
  */
 export type MuslimState = {
   hydrated: boolean;
@@ -38,8 +38,8 @@ export type MuslimState = {
   quests: QuestStore;
   /** IDs unlocked since last `clearUnlockedNow()` call. */
   unlockedNow: string[];
-  /** YYYY-MM-DD of the most recent unseen save event, or null. */
-  pendingSave: string | null;
+  /** All unseen save event dates (YYYY-MM-DD). */
+  pendingSaves: string[];
   setProgress: (mutator: (p: Progress) => Progress) => void;
   setQuests: (mutator: (q: QuestStore) => QuestStore) => void;
   clearUnlockedNow: () => void;
@@ -134,16 +134,15 @@ export function useMuslimState(): MuslimState {
     setProgressState(updated);
   }, []);
 
-  // The pending save = the most-recent unseen save date (or null).
-  const pendingUnseen = unseenSaveEvents(progress);
-  const pendingSave = pendingUnseen.length > 0 ? pendingUnseen[0] : null;
+  // The pending saves = all unseen save dates.
+  const pendingSaves = unseenSaveEvents(progress);
 
   return {
     hydrated,
     progress,
     quests,
     unlockedNow,
-    pendingSave,
+    pendingSaves,
     setProgress,
     setQuests,
     clearUnlockedNow,

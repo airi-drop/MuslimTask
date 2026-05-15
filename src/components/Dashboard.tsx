@@ -42,7 +42,7 @@ export function Dashboard() {
     setProgress,
     unlockedNow,
     clearUnlockedNow,
-    pendingSave,
+    pendingSaves,
     acknowledgeSave,
   } = useMuslimState();
 
@@ -79,7 +79,7 @@ export function Dashboard() {
   return (
     <div className="grid gap-4 sm:gap-5 lg:grid-cols-12">
       <AchievementToast ids={unlockedNow} onDismiss={clearUnlockedNow} />
-      <StreakSaveToast saveDate={pendingSave} onDismiss={acknowledgeSave} />
+      <StreakSaveToast saveDates={pendingSaves} onDismiss={acknowledgeSave} />
 
       {/* HERO */}
       <section className="card-feature relative col-span-full overflow-hidden p-5 sm:p-7">
