@@ -44,20 +44,21 @@ export function SurahReader({ meta }: Props) {
     setLoading(true);
     setError(null);
 
-    const cached = loadCachedSurah(meta.nomor);
-    if (cached?.ayat?.length) {
-      setDetail(cached);
-      setLoading(false);
-      pushRecent(meta.nomor);
-    }
-
-    fetchSurah(meta.nomor)
-      .then((d) => {
-        if (cancelled) return;
-        setDetail(d);
+    (async () => {
+      const cached = await loadCachedSurah(meta.nomor);
+      if (cancelled) return;
+      if (cached?.ayat?.length) {
+        setDetail(cached);
+        setLoading(false);
         pushRecent(meta.nomor);
-      })
-      .catch((e) => {
+      }
+
+      try {
+        const fresh = await fetchSurah(meta.nomor);
+        if (cancelled) return;
+        setDetail(fresh);
+        pushRecent(meta.nomor);
+      } catch (e) {
         if (cancelled) return;
         if (!cached) {
           setError(
@@ -66,11 +67,10 @@ export function SurahReader({ meta }: Props) {
               : "Gagal memuat surah. Coba lagi saat online.",
           );
         }
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setLoading(false);
-      });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
 
     return () => {
       cancelled = true;

@@ -1,5 +1,6 @@
 import surahListJson from "@/data/quran-list.json";
 import { readJSON, writeJSON } from "./storage";
+import { idbGet, idbPut } from "./idb";
 
 export type SurahMeta = {
   nomor: number;
@@ -19,15 +20,18 @@ export type Ayat = {
 
 export type SurahDetail = SurahMeta & {
   ayat: Ayat[];
+  /** Map qari code (e.g. "01".."05") -> mp3 URL. */
+  audioFull?: Record<string, string>;
   /** when this detail was cached (ms epoch) */
   cachedAt?: number;
 };
 
 export const SURAH_LIST: SurahMeta[] = surahListJson as SurahMeta[];
 
-/* ---------- Detail cache ---------- */
+/* ---------- Detail cache (IndexedDB) ---------- */
 
-const DETAIL_KEY = (n: number) => `mt:quran:surah:${n}`;
+/** Legacy localStorage key used in earlier versions. We migrate on access. */
+const LEGACY_DETAIL_KEY = (n: number) => `mt:quran:surah:${n}`;
 /** Recent surah numbers, most-recent first. */
 const RECENT_KEY = "mt:quran:recent";
 const RECENT_MAX = 5;
@@ -44,20 +48,43 @@ export type LastRead = {
 
 export type BookmarkStore = Record<string, number[]>;
 
-export function loadCachedSurah(n: number): SurahDetail | null {
-  return readJSON<SurahDetail | null>(DETAIL_KEY(n), null);
+/**
+ * Load cached surah detail. Tries IDB first; falls back to legacy localStorage
+ * entries from earlier versions (and migrates them to IDB on hit).
+ */
+export async function loadCachedSurah(n: number): Promise<SurahDetail | null> {
+  const fromIdb = await idbGet<SurahDetail>("quran-surah", n);
+  if (fromIdb) return fromIdb;
+
+  // Migrate from legacy localStorage if present
+  if (typeof window !== "undefined") {
+    try {
+      const raw = window.localStorage.getItem(LEGACY_DETAIL_KEY(n));
+      if (raw) {
+        const parsed = JSON.parse(raw) as SurahDetail;
+        if (parsed?.ayat?.length) {
+          await idbPut("quran-surah", n, parsed);
+          window.localStorage.removeItem(LEGACY_DETAIL_KEY(n));
+          return parsed;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return null;
 }
 
-export function saveCachedSurah(detail: SurahDetail): void {
-  writeJSON(DETAIL_KEY(detail.nomor), {
+export async function saveCachedSurah(detail: SurahDetail): Promise<void> {
+  await idbPut("quran-surah", detail.nomor, {
     ...detail,
     cachedAt: Date.now(),
   });
 }
 
 export async function fetchSurah(n: number): Promise<SurahDetail> {
-  // 1. Try local cache first (offline-first).
-  const cached = loadCachedSurah(n);
+  // 1. Try cache first (offline-first).
+  const cached = await loadCachedSurah(n);
   if (cached && cached.ayat?.length) return cached;
 
   // 2. Fetch from network.
@@ -65,7 +92,9 @@ export async function fetchSurah(n: number): Promise<SurahDetail> {
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Gagal mengambil surah ${n}`);
-  const body = (await res.json()) as { data: SurahDetail & { deskripsi?: string } };
+  const body = (await res.json()) as {
+    data: SurahDetail & { deskripsi?: string; audioFull?: Record<string, string> };
+  };
   const detail: SurahDetail = {
     nomor: body.data.nomor,
     nama: body.data.nama,
@@ -74,8 +103,9 @@ export async function fetchSurah(n: number): Promise<SurahDetail> {
     tempatTurun: body.data.tempatTurun,
     arti: body.data.arti,
     ayat: body.data.ayat,
+    audioFull: body.data.audioFull,
   };
-  saveCachedSurah(detail);
+  await saveCachedSurah(detail);
   return detail;
 }
 
