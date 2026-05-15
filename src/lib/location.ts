@@ -107,10 +107,73 @@ export type GpsResult =
   | { ok: true; location: Location }
   | { ok: false; error: string };
 
+type NominatimAddress = {
+  village?: string;
+  town?: string;
+  city?: string;
+  city_district?: string;
+  suburb?: string;
+  neighbourhood?: string;
+  county?: string;
+  state_district?: string;
+  state?: string;
+  region?: string;
+  country?: string;
+};
+
+type NominatimResult = {
+  display_name?: string;
+  address?: NominatimAddress;
+};
+
 /**
- * Request browser geolocation. Reverse-geocoding is intentionally not done —
- * we only need lat/lon for prayer time calculation, and city/region is
- * shown as "Lokasi GPS" until user picks a known preset.
+ * Reverse-geocode lat/lon → human readable city + region using OpenStreetMap
+ * Nominatim. Free, no API key. Fails silently to coordinate fallback.
+ */
+async function reverseGeocode(
+  lat: number,
+  lon: number,
+  signal?: AbortSignal,
+): Promise<{ city: string; region: string } | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=12&accept-language=id`;
+    const res = await fetch(url, {
+      signal,
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as NominatimResult;
+    const addr = data.address ?? {};
+
+    // Pick the most specific available city-level name first.
+    const city =
+      addr.city ||
+      addr.town ||
+      addr.village ||
+      addr.city_district ||
+      addr.suburb ||
+      addr.county ||
+      addr.neighbourhood ||
+      "Lokasi";
+    const region =
+      addr.state ||
+      addr.region ||
+      addr.state_district ||
+      addr.country ||
+      "";
+
+    return {
+      city,
+      region: region || "Indonesia",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Request browser geolocation, then attempt reverse-geocoding for a
+ * human-readable name. Falls back to coordinates if the name lookup fails.
  */
 export function requestGps(timeoutMs = 10_000): Promise<GpsResult> {
   return new Promise((resolve) => {
@@ -119,18 +182,28 @@ export function requestGps(timeoutMs = 10_000): Promise<GpsResult> {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const tz =
           (typeof Intl !== "undefined" &&
             Intl.DateTimeFormat().resolvedOptions().timeZone) ||
           "Asia/Jakarta";
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+
+        // Try reverse geocoding (5s budget). If it fails, use coords.
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 5000);
+        const named = await reverseGeocode(lat, lon, ctrl.signal);
+        clearTimeout(t);
+
+        const fallbackRegion = `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
         resolve({
           ok: true,
           location: {
-            city: "Lokasi GPS",
-            region: `${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)}`,
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
+            city: named?.city ?? "Lokasi GPS",
+            region: named?.region ?? fallbackRegion,
+            latitude: lat,
+            longitude: lon,
             timezone: tz,
             source: "gps",
           },

@@ -3,6 +3,8 @@ import { Inter, Space_Grotesk, Amiri } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { themeBootScript } from "@/components/ThemeToggle";
+import { PWARegister } from "@/components/PWARegister";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const display = Space_Grotesk({
@@ -17,9 +19,17 @@ const amiri = Amiri({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://muslimtask.app"),
   title: "MuslimTask — Quest Ibadah Harian",
   description:
     "Tingkatkan konsistensi ibadahmu lewat sistem quest, streak, dan achievement. Offline-first, full Indonesian.",
+  applicationName: "MuslimTask",
+  appleWebApp: {
+    capable: true,
+    title: "MuslimTask",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -29,6 +39,7 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -46,6 +57,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
           <main className="mt-4 sm:mt-5">{children}</main>
         </div>
+        <PWARegister />
+        <InstallPrompt />
       </body>
     </html>
   );

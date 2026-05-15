@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useMuslimState } from "@/lib/useMuslimState";
+import { evaluateAll } from "@/lib/achievements";
 
 type NavItem = {
   label: string;
@@ -13,6 +15,7 @@ type NavItem = {
 
 const ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/" },
+  { label: "Quest", href: "/quest" },
   { label: "Statistik", href: "/statistik" },
   { label: "Achievement", href: "/achievement" },
   { label: "Mihrab", href: "/mihrab", hasDropdown: true },
@@ -20,14 +23,19 @@ const ITEMS: NavItem[] = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const [streak] = useState(0);
+  const { progress, quests } = useMuslimState();
   const [open, setOpen] = useState(false);
 
   useEffect(() => setOpen(false), [pathname]);
 
+  // Bell dot lights up when there are recently-unlocked badges that haven't
+  // been viewed (= unlockedAchievements set size > seenAchievements size).
+  // For now, we use a simpler signal: any unlocked achievement shows badge.
+  const evaluated = evaluateAll(progress, quests);
+  const unlockedCount = evaluated.filter((e) => e.unlocked).length;
+
   return (
     <nav className="card flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 sm:px-5 sm:py-3">
-      {/* Brand */}
       <Link href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
         <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-parchment-50 shadow-glow sm:h-11 sm:w-11">
           <CrescentLogo className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -43,7 +51,6 @@ export function Navbar() {
         </div>
       </Link>
 
-      {/* Mobile: collapse toggle */}
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Menu"
@@ -52,7 +59,6 @@ export function Navbar() {
         <BurgerIcon className="h-5 w-5" />
       </button>
 
-      {/* Nav links */}
       <ul
         className={`order-3 w-full items-center justify-center gap-1 sm:order-2 sm:flex sm:w-auto ${
           open ? "flex flex-col" : "hidden sm:flex"
@@ -81,20 +87,24 @@ export function Navbar() {
         })}
       </ul>
 
-      {/* Right side */}
       <div className="order-2 flex shrink-0 items-center gap-2 sm:order-3 sm:gap-3">
         <div className="hidden items-center gap-2 rounded-full border border-emerald-100 bg-white px-3 py-1.5 text-emerald-700 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100 md:inline-flex">
           <FlameIcon className="h-4 w-4 text-amber-400" />
-          <span className="text-sm font-semibold">{streak} Hari</span>
+          <span className="text-sm font-semibold">{progress.streak} Hari</span>
         </div>
         <ThemeToggle />
-        <button
-          aria-label="Notifikasi"
+        <Link
+          href="/achievement"
+          aria-label="Achievement"
           className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-emerald-100 bg-white text-emerald-700 hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100"
         >
           <BellIcon className="h-5 w-5" />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-amber-400" />
-        </button>
+          {unlockedCount > 0 && (
+            <span className="absolute -right-1 -top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-emerald-950 shadow-glow-amber">
+              {unlockedCount}
+            </span>
+          )}
+        </Link>
         <div className="hidden items-center gap-2 rounded-full border border-emerald-100 bg-white py-1 pl-1 pr-3 dark:border-emerald-900/60 dark:bg-space-800 lg:flex">
           <div className="grid h-8 w-8 place-items-center rounded-full bg-emerald-100 font-semibold text-emerald-800 dark:bg-emerald-900 dark:text-neon-400">
             A
@@ -112,8 +122,6 @@ export function Navbar() {
     </nav>
   );
 }
-
-/* ---------- Icons ---------- */
 
 function CrescentLogo({ className }: { className?: string }) {
   return (
