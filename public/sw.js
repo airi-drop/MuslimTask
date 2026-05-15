@@ -16,6 +16,7 @@ const CACHE_DATA = `mt-data-${VERSION}`;
 const PRECACHE_URLS = [
   "/",
   "/quest",
+  "/tasbih",
   "/statistik",
   "/achievement",
   "/mihrab",

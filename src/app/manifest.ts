@@ -48,6 +48,12 @@ export default function manifest(): MetadataRoute.Manifest {
         description: "Lihat dan klaim quest harian.",
       },
       {
+        name: "Tasbih",
+        short_name: "Tasbih",
+        url: "/tasbih",
+        description: "Dzikir dengan counter digital.",
+      },
+      {
         name: "Al-Quran",
         short_name: "Quran",
         url: "/mihrab/quran",

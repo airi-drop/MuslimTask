@@ -16,6 +16,7 @@ type NavItem = {
 const ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/" },
   { label: "Quest", href: "/quest" },
+  { label: "Tasbih", href: "/tasbih" },
   { label: "Statistik", href: "/statistik" },
   { label: "Achievement", href: "/achievement" },
   { label: "Mihrab", href: "/mihrab", hasDropdown: true },
