@@ -26,6 +26,8 @@ import {
 } from "@/lib/quests";
 import { useMuslimState } from "@/lib/useMuslimState";
 import { loadSettings } from "@/lib/settings";
+import { DEFAULT_LOCATION, loadLocation, type Location } from "@/lib/location";
+import { getDzikirWindow, type WindowState } from "@/lib/timeWindows";
 
 const DZIKIR_PAGI_DEF = DAILY_QUESTS.find((q) => q.id === "dzikir-pagi")!;
 const DZIKIR_PETANG_DEF = DAILY_QUESTS.find((q) => q.id === "dzikir-petang")!;
@@ -46,13 +48,24 @@ export function DzikirCounter() {
   const [activeSet, setActiveSet] = useState<DzikirSet>("pagi");
   const [counters, setCounters] = useState<DzikirCounters>(() => loadDzikir());
   const [hydrated, setHydrated] = useState(false);
+  const [location, setLocation] = useState<Location>(DEFAULT_LOCATION);
+  const [, setNowTick] = useState(0);
   const claimedSetsRef = useRef<Set<DzikirSet>>(new Set());
 
   // Hydrate (storage may have a different shape after midnight reset)
   useEffect(() => {
     setCounters(loadDzikir());
+    setLocation(loadLocation());
     setHydrated(true);
+    const id = setInterval(() => setNowTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
   }, []);
+
+  const activeWindow: WindowState | null = useMemo(
+    () => (hydrated ? getDzikirWindow(activeSet, location) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeSet, location, hydrated],
+  );
 
   const activeSection = useMemo(
     () => DZIKIR_SECTIONS.find((s) => s.set === activeSet)!,
@@ -175,9 +188,24 @@ export function DzikirCounter() {
 
       {/* Description + reset */}
       <section className="card flex flex-wrap items-center justify-between gap-3 p-4">
-        <p className="min-w-0 flex-1 text-sm text-emerald-700/80 dark:text-parchment-100/70">
-          {activeSection.description}
-        </p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-emerald-700/80 dark:text-parchment-100/70">
+            {activeSection.description}
+          </p>
+          {activeWindow && (
+            <p
+              className={`mt-1 text-[11px] font-semibold ${
+                activeWindow.active
+                  ? "text-neon-600 dark:text-neon-400"
+                  : "text-amber-600 dark:text-amber-300"
+              }`}
+              title={activeWindow.description}
+            >
+              {activeWindow.active ? "● " : "⏳ "}
+              {activeWindow.statusLabel} · Waktu utama: {activeWindow.label}
+            </p>
+          )}
+        </div>
         <button
           onClick={resetActive}
           disabled={!hydrated}

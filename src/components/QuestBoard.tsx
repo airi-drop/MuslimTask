@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AchievementToast } from "@/components/AchievementToast";
 import { PageHeader } from "@/components/PageHeader";
 import {
@@ -18,6 +18,8 @@ import {
   getTodayRecord,
 } from "@/lib/progress";
 import { useMuslimState } from "@/lib/useMuslimState";
+import { DEFAULT_LOCATION, loadLocation, type Location } from "@/lib/location";
+import { getQuestWindow, type WindowState } from "@/lib/timeWindows";
 
 type Tab = "daily" | "weekly";
 
@@ -36,6 +38,15 @@ export function QuestBoard() {
   } = useMuslimState();
 
   const [tab, setTab] = useState<Tab>("daily");
+  const [location, setLocation] = useState<Location>(DEFAULT_LOCATION);
+  const [, setNowTick] = useState(0);
+
+  useEffect(() => {
+    setLocation(loadLocation());
+    // Re-evaluate windows once a minute
+    const id = setInterval(() => setNowTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const activeList = tab === "daily" ? DAILY_QUESTS : WEEKLY_QUESTS;
 
@@ -145,12 +156,14 @@ export function QuestBoard() {
       <section className="space-y-3">
         {activeList.map((q) => {
           const s = effectiveState(q);
+          const win = hydrated ? getQuestWindow(q.id, location) : null;
           return (
             <QuestRow
               key={q.id}
               def={q}
               state={s}
               synced={s.synced}
+              window={win}
               disabled={!hydrated}
               onIncrement={() => increment(q)}
               onReset={() => reset(q)}
@@ -222,6 +235,7 @@ function QuestRow({
   def,
   state,
   synced,
+  window: win,
   onIncrement,
   onReset,
   disabled,
@@ -229,6 +243,7 @@ function QuestRow({
   def: QuestDef;
   state: QuestState;
   synced: boolean;
+  window: WindowState | null;
   onIncrement: () => void;
   onReset: () => void;
   disabled?: boolean;
@@ -272,12 +287,29 @@ function QuestRow({
                 ✓ Selesai
               </span>
             )}
+            {win && !state.done && (
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  win.active
+                    ? "bg-neon-400/20 text-neon-700 dark:text-neon-300"
+                    : "bg-amber-400/15 text-amber-700 dark:text-amber-300"
+                }`}
+                title={win.description}
+              >
+                {win.active ? "● Sekarang" : `⏳ ${win.statusLabel}`}
+              </span>
+            )}
           </div>
           <p className="mt-1 break-words text-sm text-emerald-700/80 dark:text-parchment-100/70">
             {synced
               ? "Tandai di Dashboard. Setiap salat memberi +10 XP — total 50 XP untuk 5 waktu."
               : def.description}
           </p>
+          {win && !state.done && !win.active && (
+            <p className="mt-1 break-words text-[11px] text-emerald-700/60 dark:text-parchment-100/50">
+              Waktu utama: {win.label}
+            </p>
+          )}
 
           <div className="mt-3 flex items-center gap-3">
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-parchment-100 dark:bg-space-900">
