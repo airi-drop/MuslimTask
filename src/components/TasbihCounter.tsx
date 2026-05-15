@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { loadSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n";
 
 type Preset = {
   id: string;
@@ -56,6 +57,7 @@ function vibrate(ms: number | number[]) {
 }
 
 export function TasbihCounter() {
+  const { t } = useT();
   const [activePreset, setActivePreset] = useState<Preset>(PRESETS[0]);
   const [count, setCount] = useState(0);
   const [tasbihData, setTasbihData] = useState<TasbihData>({ lifetime: {} });
@@ -116,9 +118,9 @@ export function TasbihCounter() {
   return (
     <div className="space-y-4 sm:space-y-5">
       <PageHeader
-        eyebrow="Tasbih"
-        title="Tasbih Digital"
-        description="Dzikir dengan counter digital. Pilih preset atau atur target sendiri. Data tersimpan otomatis."
+        eyebrow={t("tasbih.eyebrow")}
+        title={t("tasbih.title")}
+        description={t("tasbih.description")}
         back={{ href: "/", label: "Dashboard" }}
       />
 
@@ -146,14 +148,14 @@ export function TasbihCounter() {
                 : "border border-emerald-100 bg-white text-emerald-700 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100"
             }`}
           >
-            Custom
+            {t("tasbih.custom")}
           </button>
         </div>
 
         {isCustom && (
           <div className="mt-3 flex items-center gap-3">
             <label className="text-xs font-semibold text-emerald-700/80 dark:text-parchment-100/70">
-              Target:
+              {t("tasbih.target")}:
             </label>
             <input
               type="number"
@@ -204,7 +206,7 @@ export function TasbihCounter() {
             </div>
             {done && (
               <div className="mt-2 text-xs font-bold text-neon-400">
-                ✓ Selesai
+                ✓ {t("tasbih.completed")}
               </div>
             )}
           </div>
@@ -229,12 +231,12 @@ export function TasbihCounter() {
             disabled={!hydrated || count === 0}
             className="rounded-full border border-emerald-100 bg-white px-4 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-parchment-50 disabled:opacity-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100 dark:hover:bg-space-900"
           >
-            Reset
+            {t("tasbih.reset")}
           </button>
         </div>
 
         <div className="mt-4 text-center text-xs text-emerald-700/70 dark:text-parchment-100/60">
-          Total seumur hidup ({isCustom ? "Custom" : activePreset.label}):{" "}
+          {t("tasbih.lifetimeTotal")} ({isCustom ? t("tasbih.custom") : activePreset.label}):{" "}
           <span className="font-bold text-emerald-800 dark:text-parchment-50">
             {lifetimeTotal.toLocaleString("id-ID")}x
           </span>
@@ -242,7 +244,7 @@ export function TasbihCounter() {
       </section>
 
       <p className="text-center text-xs text-emerald-700/60 dark:text-parchment-100/50">
-        Tap lingkaran untuk menghitung. Data tersimpan otomatis di perangkat.
+        {t("tasbih.tapHint")}
       </p>
     </div>
   );

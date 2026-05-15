@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { DOA_CATEGORIES, DOA_LIST, type DoaCategory } from "@/lib/doa";
+import { useT } from "@/lib/i18n";
 
 export function DoaList() {
+  const { t } = useT();
   const [activeCategory, setActiveCategory] = useState<DoaCategory | null>(null);
   const [search, setSearch] = useState("");
 
@@ -29,10 +31,10 @@ export function DoaList() {
   return (
     <div className="space-y-4 sm:space-y-5">
       <PageHeader
-        eyebrow="Mihrab / Doa Harian"
-        title="Doa Harian"
-        description="Kumpulan doa untuk aktivitas sehari-hari. Tersimpan offline — bisa dibuka kapan saja."
-        back={{ href: "/mihrab", label: "Mihrab" }}
+        eyebrow={t("doa.eyebrow")}
+        title={t("doa.title")}
+        description={t("doa.description")}
+        back={{ href: "/mihrab", label: t("nav.mihrab") }}
       />
 
       {/* Category chips */}
@@ -46,7 +48,7 @@ export function DoaList() {
                 : "border border-emerald-100 bg-white text-emerald-700 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100"
             }`}
           >
-            Semua
+            {t("doa.all")}
           </button>
           {DOA_CATEGORIES.map((cat) => (
             <button
@@ -69,7 +71,7 @@ export function DoaList() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari doa..."
+            placeholder={t("doa.searchPlaceholder")}
             className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-2.5 text-sm text-emerald-800 placeholder:text-emerald-700/40 focus:border-neon-400 focus:outline-none dark:border-emerald-900/60 dark:bg-space-900 dark:text-parchment-50 dark:placeholder:text-parchment-100/40"
           />
         </div>
@@ -79,7 +81,7 @@ export function DoaList() {
       {filtered.length === 0 ? (
         <div className="card p-6 text-center">
           <p className="text-sm text-emerald-700/70 dark:text-parchment-100/60">
-            Tidak ada doa yang cocok dengan pencarian.
+            {t("doa.notFound")}
           </p>
         </div>
       ) : (
@@ -104,7 +106,7 @@ export function DoaList() {
                 {d.latin}
               </p>
               <p className="mt-2 break-words text-sm text-emerald-800 dark:text-parchment-100/90">
-                <span className="font-semibold">Artinya:</span> {d.translation}
+                <span className="font-semibold">{t("doa.meaning")}:</span> {d.translation}
               </p>
               {d.source && (
                 <p className="mt-2 text-[11px] text-emerald-700/60 dark:text-parchment-100/50">

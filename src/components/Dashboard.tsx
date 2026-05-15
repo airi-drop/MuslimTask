@@ -25,17 +25,19 @@ import {
 import { formatGregorian, toHijri } from "@/lib/hijri";
 import { useMuslimState } from "@/lib/useMuslimState";
 import { displayName, loadSettings } from "@/lib/settings";
+import { useT, type TKey } from "@/lib/i18n";
 import { useEffect } from "react";
 
-const PRAYER_LABELS: Record<PrayerKey, string> = {
-  fajr: "Subuh",
-  dhuhr: "Dzuhur",
-  asr: "Ashar",
-  maghrib: "Maghrib",
-  isha: "Isya",
+const PRAYER_KEY_LABEL: Record<PrayerKey, TKey> = {
+  fajr: "prayer.fajr",
+  dhuhr: "prayer.dhuhr",
+  asr: "prayer.asr",
+  maghrib: "prayer.maghrib",
+  isha: "prayer.isha",
 };
 
 export function Dashboard() {
+  const { t } = useT();
   const {
     hydrated,
     progress,
@@ -92,13 +94,13 @@ export function Dashboard() {
         <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-center">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neon-400">
-              Assalamu&apos;alaikum, {name}
+              {t("dashboard.greeting")}, {name}
             </p>
             <h1 className="mt-2 font-display text-3xl font-bold leading-tight text-parchment-50 sm:text-4xl lg:text-5xl">
-              Dashboard <span className="text-neon-400">Harian</span>
+              {t("dashboard.title1")} <span className="text-neon-400">{t("dashboard.title2")}</span>
             </h1>
             <p className="mt-2 max-w-md text-sm text-parchment-100/80">
-              Selesaikan quest ibadahmu hari ini. Kumpulkan XP, naik level, dan jaga streak-mu.
+              {t("dashboard.subtitle")}
             </p>
 
             <div className="mt-3">
@@ -116,7 +118,7 @@ export function Dashboard() {
                   gregorian: formatGregorian(new Date()),
                 })}
                 className="!bg-emerald-950/40 !text-parchment-50 !border-emerald-800/60 hover:!bg-emerald-900"
-                label="Bagikan Progressku"
+                label={t("dashboard.shareBtn")}
               />
             </div>
 
@@ -126,7 +128,7 @@ export function Dashboard() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2 text-xs text-parchment-100/80">
-                  <span className="truncate">XP Level {level}</span>
+                  <span className="truncate">{t("dashboard.xpLevel")} {level}</span>
                   <span className="shrink-0">
                     <span className="text-glow-neon font-display font-bold">
                       {intoLevel}
@@ -141,7 +143,7 @@ export function Dashboard() {
                   />
                 </div>
                 <p className="mt-1.5 truncate text-[11px] text-parchment-100/60">
-                  {toNext} XP lagi untuk Level {level + 1}
+                  {toNext} {t("dashboard.xpToNext")} {level + 1}
                 </p>
               </div>
             </div>
@@ -164,10 +166,10 @@ export function Dashboard() {
           <div className="flex flex-wrap items-end justify-between gap-2 text-sm">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-widest text-emerald-600/70 dark:text-neon-500/70">
-                Quest Utama
+                {t("dashboard.questMain")}
               </div>
               <div className="font-display text-xl font-bold text-emerald-800 dark:text-parchment-50">
-                Target 5 Salat
+                {t("dashboard.target5")}
               </div>
             </div>
             <div className="text-right">
@@ -176,8 +178,8 @@ export function Dashboard() {
               </div>
               <div className="text-xs text-emerald-700/70 dark:text-parchment-100/70">
                 {remaining > 0
-                  ? `${remaining} salat lagi`
-                  : "Target tercapai!"}
+                  ? `${remaining} ${t("dashboard.morePrayers")}`
+                  : t("dashboard.targetReached")}
               </div>
             </div>
           </div>
@@ -191,7 +193,7 @@ export function Dashboard() {
 
         <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
           <StatTile
-            label="XP Hari Ini"
+            label={t("dashboard.xpToday")}
             value={
               <span>
                 {progress.todayXp}
@@ -202,18 +204,18 @@ export function Dashboard() {
             accent="amber"
           />
           <StatTile
-            label="Level"
+            label={t("dashboard.level")}
             value={level}
             icon={<LayersIcon className="h-3.5 w-3.5" />}
             accent="neon"
           />
           <StatTile
-            label="Salat"
+            label={t("dashboard.salat")}
             value={`${prayedCount}/${TARGET_PRAYERS_PER_DAY}`}
             icon={<CheckIcon className="h-3.5 w-3.5" />}
           />
           <StatTile
-            label="Total XP"
+            label={t("dashboard.totalXp")}
             value={
               <span>
                 {progress.totalXp}
@@ -228,10 +230,10 @@ export function Dashboard() {
         <div className="mt-6">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h4 className="font-display text-base font-bold text-emerald-800 dark:text-parchment-50 sm:text-lg">
-              Quest Salat 5 Waktu
+              {t("dashboard.prayer5Title")}
             </h4>
             <span className="text-[11px] text-emerald-700/70 dark:text-parchment-100/60 sm:text-xs">
-              Tap untuk klaim XP
+              {t("dashboard.tapToClaim")}
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -250,7 +252,7 @@ export function Dashboard() {
                 >
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold">
-                      {PRAYER_LABELS[key]}
+                      {t(PRAYER_KEY_LABEL[key])}
                     </div>
                     <div
                       className={`truncate text-[11px] ${
@@ -259,7 +261,7 @@ export function Dashboard() {
                           : "text-emerald-700/70 dark:text-parchment-100/60"
                       }`}
                     >
-                      {done ? "+10 XP klaim" : "Belum klaim"}
+                      {done ? t("dashboard.claimed") : t("dashboard.notClaimed")}
                     </div>
                   </div>
                   <span

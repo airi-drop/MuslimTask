@@ -5,37 +5,39 @@ import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useMuslimState } from "@/lib/useMuslimState";
 import { unclaimedAchievementCount } from "@/lib/progress";
+import { useT, type TKey } from "@/lib/i18n";
 
 /* ─── Bottom tab bar items (mobile) ─── */
 type TabItem = {
-  label: string;
+  labelKey: TKey;
   href: string;
   icon: (props: { className?: string; active?: boolean }) => JSX.Element;
   center?: boolean;
 };
 
 const TABS: TabItem[] = [
-  { label: "Home", href: "/", icon: HomeIcon },
-  { label: "Quest", href: "/quest", icon: QuestIcon },
-  { label: "Tasbih", href: "/tasbih", icon: TasbihIcon, center: true },
-  { label: "Statistik", href: "/statistik", icon: StatsIcon },
-  { label: "Mihrab", href: "/mihrab", icon: MihrabIcon },
+  { labelKey: "nav.home", href: "/", icon: HomeIcon },
+  { labelKey: "nav.quest", href: "/quest", icon: QuestIcon },
+  { labelKey: "nav.tasbih", href: "/tasbih", icon: TasbihIcon, center: true },
+  { labelKey: "nav.statistik", href: "/statistik", icon: StatsIcon },
+  { labelKey: "nav.mihrab", href: "/mihrab", icon: MihrabIcon },
 ];
 
 /* ─── Desktop top nav items ─── */
-type NavItem = { label: string; href: string; hasDropdown?: boolean };
+type NavItem = { labelKey: TKey; href: string; hasDropdown?: boolean };
 
 const DESKTOP_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/" },
-  { label: "Quest", href: "/quest" },
-  { label: "Tasbih", href: "/tasbih" },
-  { label: "Statistik", href: "/statistik" },
-  { label: "Mihrab", href: "/mihrab", hasDropdown: true },
+  { labelKey: "nav.dashboard", href: "/" },
+  { labelKey: "nav.quest", href: "/quest" },
+  { labelKey: "nav.tasbih", href: "/tasbih" },
+  { labelKey: "nav.statistik", href: "/statistik" },
+  { labelKey: "nav.mihrab", href: "/mihrab", hasDropdown: true },
 ];
 
 export function Navbar() {
   const pathname = usePathname();
   const { progress } = useMuslimState();
+  const { t } = useT();
 
   const unlockedCount = unclaimedAchievementCount(progress);
 
@@ -74,7 +76,7 @@ export function Navbar() {
                       : "text-emerald-700 hover:bg-parchment-50 dark:text-parchment-100 dark:hover:bg-space-900"
                   }`}
                 >
-                  {it.label}
+                  {t(it.labelKey)}
                   {it.hasDropdown && (
                     <ChevronDownIcon className="h-3.5 w-3.5 opacity-70" />
                   )}
@@ -88,12 +90,12 @@ export function Navbar() {
         <div className="flex shrink-0 items-center gap-3">
           <div className="hidden items-center gap-2 rounded-full border border-emerald-100 bg-white px-3 py-1.5 text-emerald-700 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100 md:inline-flex">
             <FlameIcon className="h-4 w-4 text-amber-400" />
-            <span className="text-sm font-semibold">{progress.streak} Hari</span>
+            <span className="text-sm font-semibold">{progress.streak} {t("common.days")}</span>
           </div>
           <ThemeToggle />
           <Link
             href="/achievement"
-            aria-label="Achievement"
+            aria-label={t("nav.achievement")}
             className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-emerald-100 bg-white text-emerald-700 hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100"
           >
             <BellIcon className="h-5 w-5" />
@@ -105,7 +107,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/settings"
-            aria-label="Pengaturan"
+            aria-label={t("nav.settings")}
             className="hidden items-center gap-2 rounded-full border border-emerald-100 bg-white py-1 pl-1 pr-3 hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:hover:bg-space-900 lg:flex"
           >
             <div className="grid h-8 w-8 place-items-center rounded-full bg-emerald-100 font-semibold text-emerald-800 dark:bg-emerald-900 dark:text-neon-400">
@@ -113,16 +115,16 @@ export function Navbar() {
             </div>
             <div className="leading-tight">
               <div className="text-sm font-semibold text-emerald-800 dark:text-parchment-50">
-                Admin
+                {t("nav.adminLabel")}
               </div>
               <div className="text-[10px] tracking-widest text-emerald-600/70 dark:text-neon-500/70">
-                PENGATURAN
+                {t("nav.adminCaption")}
               </div>
             </div>
           </Link>
           <Link
             href="/settings"
-            aria-label="Pengaturan"
+            aria-label={t("nav.settings")}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-emerald-100 bg-white text-emerald-700 hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100 lg:hidden"
           >
             <GearIcon className="h-5 w-5" />
@@ -147,7 +149,7 @@ export function Navbar() {
           </div>
           <Link
             href="/achievement"
-            aria-label="Achievement"
+            aria-label={t("nav.achievement")}
             className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full border border-emerald-100 bg-white text-emerald-700 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100"
           >
             <BellIcon className="h-4 w-4" />
@@ -159,7 +161,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/settings"
-            aria-label="Pengaturan"
+            aria-label={t("nav.settings")}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-emerald-100 bg-white text-emerald-700 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100"
           >
             <GearIcon className="h-4 w-4" />
@@ -201,7 +203,7 @@ export function Navbar() {
                         : "text-emerald-700/60 dark:text-parchment-100/50"
                     }`}
                   >
-                    {tab.label}
+                    {t(tab.labelKey)}
                   </span>
                 </Link>
               );
@@ -236,7 +238,7 @@ export function Navbar() {
                       : "text-emerald-700/50 dark:text-parchment-100/40"
                   }`}
                 >
-                  {tab.label}
+                  {t(tab.labelKey)}
                 </span>
               </Link>
             );

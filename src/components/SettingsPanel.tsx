@@ -2,67 +2,82 @@
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { useT } from "@/lib/i18n";
 import {
   CALC_METHOD_DESC,
   CALC_METHOD_LABEL,
   DEFAULT_SETTINGS,
   LANGUAGE_LABEL,
   MADHAB_LABEL,
-  QARI_LABEL,
   loadSettings,
   saveSettings,
   type CalcMethod,
   type Language,
   type Madhab,
-  type Qari,
   type Settings,
 } from "@/lib/settings";
 
 export function SettingsPanel() {
+  const { t } = useT();
   const [s, setS] = useState<Settings>(DEFAULT_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  // Profile draft state — only persisted on Save click.
+  const [draftName, setDraftName] = useState("");
+  const [profileSaved, setProfileSaved] = useState(false);
 
   useEffect(() => {
-    setS(loadSettings());
+    const loaded = loadSettings();
+    setS(loaded);
+    setDraftName(loaded.username);
     setHydrated(true);
   }, []);
 
-  function update<K extends keyof Settings>(key: K, value: Settings[K]) {
+  /** Persist a single key immediately (used for non-profile fields). */
+  function commit<K extends keyof Settings>(key: K, value: Settings[K]) {
     const next = { ...s, [key]: value };
     setS(next);
     saveSettings(next);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 1500);
   }
 
-  const t = s.language === "en" ? en : id;
+  function saveProfile() {
+    const next = { ...s, username: draftName.trim() };
+    setS(next);
+    saveSettings(next);
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 2000);
+  }
+
+  const profileDirty = draftName.trim() !== s.username;
 
   return (
     <div className="space-y-4 sm:space-y-5">
       <PageHeader
-        eyebrow={t.eyebrow}
-        title={t.title}
-        description={t.description}
-        back={{ href: "/", label: "Dashboard" }}
+        eyebrow={t("settings.eyebrow")}
+        title={t("settings.title")}
+        description={t("settings.description")}
+        back={{ href: "/", label: t("nav.dashboard") }}
       />
 
-      {saved && (
+      {savedFlash && (
         <div className="flex items-center gap-2 rounded-2xl border border-neon-400/40 bg-neon-400/10 px-4 py-2.5">
           <CheckCircleIcon className="h-4 w-4 text-neon-600 dark:text-neon-400" />
           <span className="text-xs font-semibold text-neon-700 dark:text-neon-300">
-            {t.saved}
+            {t("settings.changesSaved")}
           </span>
         </div>
       )}
 
       {/* Language */}
-      <Section icon={<GlobeIcon />} title={t.langTitle} desc={t.langDesc}>
+      <Section icon={<GlobeIcon />} title={t("settings.langTitle")} desc={t("settings.langDesc")}>
         <div className="flex gap-2">
           {(Object.keys(LANGUAGE_LABEL) as Language[]).map((lang) => (
             <button
               key={lang}
-              onClick={() => update("language", lang)}
+              onClick={() => commit("language", lang)}
               disabled={!hydrated}
               className={`flex-1 rounded-xl border px-4 py-3 text-center text-sm font-semibold transition ${
                 s.language === lang
@@ -77,36 +92,55 @@ export function SettingsPanel() {
         </div>
       </Section>
 
-      {/* Profile */}
-      <Section icon={<UserIcon />} title={t.profileTitle} desc={t.profileDesc}>
+      {/* Profile (with explicit Save) */}
+      <Section icon={<UserIcon />} title={t("settings.profileTitle")} desc={t("settings.profileDesc")}>
         <label className="block">
           <span className="text-xs font-semibold text-emerald-700/80 dark:text-parchment-100/70">
-            {t.nameLabel}
+            {t("settings.nameLabel")}
           </span>
           <input
             type="text"
-            value={s.username}
-            onChange={(e) => update("username", e.target.value)}
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
             disabled={!hydrated}
             placeholder="Musafir"
             maxLength={32}
             className="mt-1.5 w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm text-emerald-800 placeholder:text-emerald-700/40 focus:border-neon-400 focus:outline-none focus:ring-2 focus:ring-neon-400/20 dark:border-emerald-900/60 dark:bg-space-900 dark:text-parchment-50 dark:placeholder:text-parchment-100/40"
           />
           <p className="mt-1.5 text-[11px] text-emerald-700/60 dark:text-parchment-100/50">
-            {t.nameHint}
+            {t("settings.nameHint")}
           </p>
         </label>
+
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <span className="text-[11px] text-emerald-700/60 dark:text-parchment-100/50">
+            {profileSaved ? (
+              <span className="font-semibold text-neon-600 dark:text-neon-400">
+                ✓ {t("common.saved")}
+              </span>
+            ) : (
+              t("settings.profileSaveHint")
+            )}
+          </span>
+          <button
+            onClick={saveProfile}
+            disabled={!hydrated || !profileDirty}
+            className="rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 px-5 py-2 text-sm font-bold text-parchment-50 shadow-glow ring-1 ring-emerald-700 transition hover:from-emerald-500 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t("common.save")}
+          </button>
+        </div>
       </Section>
 
       {/* Prayer calculation */}
-      <Section icon={<MosqueIcon />} title={t.prayerTitle} desc={t.prayerDesc}>
+      <Section icon={<MosqueIcon />} title={t("settings.prayerTitle")} desc={t("settings.prayerDesc")}>
         <label className="block">
           <span className="text-xs font-semibold text-emerald-700/80 dark:text-parchment-100/70">
-            {t.calcLabel}
+            {t("settings.calcLabel")}
           </span>
           <select
             value={s.calcMethod}
-            onChange={(e) => update("calcMethod", e.target.value as CalcMethod)}
+            onChange={(e) => commit("calcMethod", e.target.value as CalcMethod)}
             disabled={!hydrated}
             className="mt-1.5 w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm text-emerald-800 focus:border-neon-400 focus:outline-none focus:ring-2 focus:ring-neon-400/20 dark:border-emerald-900/60 dark:bg-space-900 dark:text-parchment-50"
           >
@@ -123,11 +157,11 @@ export function SettingsPanel() {
 
         <label className="mt-4 block">
           <span className="text-xs font-semibold text-emerald-700/80 dark:text-parchment-100/70">
-            {t.madhabLabel}
+            {t("settings.madhabLabel")}
           </span>
           <select
             value={s.madhab}
-            onChange={(e) => update("madhab", e.target.value as Madhab)}
+            onChange={(e) => commit("madhab", e.target.value as Madhab)}
             disabled={!hydrated}
             className="mt-1.5 w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm text-emerald-800 focus:border-neon-400 focus:outline-none focus:ring-2 focus:ring-neon-400/20 dark:border-emerald-900/60 dark:bg-space-900 dark:text-parchment-50"
           >
@@ -138,74 +172,42 @@ export function SettingsPanel() {
             ))}
           </select>
           <p className="mt-1.5 text-[11px] text-emerald-700/70 dark:text-parchment-100/60">
-            {t.madhabHint}
+            {t("settings.madhabHint")}
           </p>
         </label>
-      </Section>
-
-      {/* Quran */}
-      <Section icon={<BookIcon />} title={t.quranTitle} desc={t.quranDesc}>
-        <label className="block">
-          <span className="text-xs font-semibold text-emerald-700/80 dark:text-parchment-100/70">
-            {t.qariLabel}
-          </span>
-          <select
-            value={s.qari}
-            onChange={(e) => update("qari", e.target.value as Qari)}
-            disabled={!hydrated}
-            className="mt-1.5 w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm text-emerald-800 focus:border-neon-400 focus:outline-none focus:ring-2 focus:ring-neon-400/20 dark:border-emerald-900/60 dark:bg-space-900 dark:text-parchment-50"
-          >
-            {(Object.keys(QARI_LABEL) as Qari[]).map((q) => (
-              <option key={q} value={q}>
-                {QARI_LABEL[q]}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1.5 text-[11px] text-emerald-700/70 dark:text-parchment-100/60">
-            {t.qariHint}
-          </p>
-        </label>
-
-        <Toggle
-          label={t.latinLabel}
-          desc={t.latinDesc}
-          checked={s.showLatin}
-          onChange={(v) => update("showLatin", v)}
-          disabled={!hydrated}
-        />
       </Section>
 
       {/* Notifications & Feedback */}
-      <Section icon={<BellIcon />} title={t.notifTitle} desc={t.notifDesc}>
+      <Section icon={<BellIcon />} title={t("settings.notifTitle")} desc={t("settings.notifDesc")}>
         <Toggle
-          label={t.prayerNotifLabel}
-          desc={t.prayerNotifDesc}
+          label={t("settings.prayerNotifLabel")}
+          desc={t("settings.prayerNotifDesc")}
           checked={s.notifications}
-          onChange={(v) => update("notifications", v)}
+          onChange={(v) => commit("notifications", v)}
           disabled={!hydrated}
         />
         <Toggle
-          label={t.vibrateLabel}
-          desc={t.vibrateDesc}
+          label={t("settings.vibrateLabel")}
+          desc={t("settings.vibrateDesc")}
           checked={s.vibrate}
-          onChange={(v) => update("vibrate", v)}
+          onChange={(v) => commit("vibrate", v)}
           disabled={!hydrated}
         />
       </Section>
 
       {/* About */}
-      <Section icon={<InfoIcon />} title={t.aboutTitle} desc={t.aboutDesc}>
+      <Section icon={<InfoIcon />} title={t("settings.aboutTitle")} desc={t("settings.aboutDesc")}>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-emerald-700/80 dark:text-parchment-100/70">{t.version}</span>
+            <span className="text-sm text-emerald-700/80 dark:text-parchment-100/70">{t("settings.version")}</span>
             <span className="text-sm font-semibold text-emerald-800 dark:text-parchment-50">1.0.0</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-emerald-700/80 dark:text-parchment-100/70">{t.storage}</span>
+            <span className="text-sm text-emerald-700/80 dark:text-parchment-100/70">{t("settings.storage")}</span>
             <span className="text-sm font-semibold text-emerald-800 dark:text-parchment-50">localStorage</span>
           </div>
           <p className="text-[11px] text-emerald-700/60 dark:text-parchment-100/50">
-            {t.hijriNote}
+            {t("settings.hijriNote")}
           </p>
         </div>
       </Section>
@@ -297,78 +299,6 @@ function Toggle({
   );
 }
 
-/* ─── i18n strings ─── */
-
-const id = {
-  eyebrow: "Pengaturan",
-  title: "Pengaturan",
-  description: "Kelola profil, preferensi ibadah, notifikasi, dan tampilan aplikasi.",
-  saved: "Perubahan tersimpan",
-  langTitle: "Bahasa",
-  langDesc: "Pilih bahasa tampilan aplikasi.",
-  profileTitle: "Profil",
-  profileDesc: "Informasi yang ditampilkan di dashboard dan kartu share.",
-  nameLabel: "Nama panggilan",
-  nameHint: "Kosongkan untuk pakai default \"Musafir\".",
-  prayerTitle: "Jadwal Salat",
-  prayerDesc: "Metode hisab dan madzhab untuk perhitungan waktu salat.",
-  calcLabel: "Metode hisab",
-  madhabLabel: "Madzhab Ashar",
-  madhabHint: "Hanafi: bayangan 2x panjang benda. Lainnya: 1x.",
-  quranTitle: "Al-Quran",
-  quranDesc: "Preferensi audio dan tampilan saat membaca Al-Quran.",
-  qariLabel: "Qari (audio)",
-  qariHint: "Audio surah yang sudah didengar tersimpan offline.",
-  latinLabel: "Tampilkan transliterasi",
-  latinDesc: "Tampilkan teks Latin di bawah ayat Arab.",
-  notifTitle: "Notifikasi & Umpan Balik",
-  notifDesc: "Pengingat salat dan respons haptic.",
-  prayerNotifLabel: "Pengingat waktu salat",
-  prayerNotifDesc: "Tampilkan notifikasi browser saat masuk waktu salat (hanya saat tab terbuka).",
-  vibrateLabel: "Getaran",
-  vibrateDesc: "Getarkan perangkat saat menghitung dzikir / tasbih.",
-  aboutTitle: "Tentang Aplikasi",
-  aboutDesc: "Informasi teknis dan catatan penting.",
-  version: "Versi",
-  storage: "Penyimpanan",
-  hijriNote: "Tanggal Hijriah menggunakan kalender Umm Al-Qura (hisab) yang dapat berbeda 1 hari dengan rukyat resmi. Untuk awal Ramadhan, Syawal, dan Zulhijjah, selalu rujuk pengumuman resmi sidang isbat.",
-};
-
-const en: typeof id = {
-  eyebrow: "Settings",
-  title: "Settings",
-  description: "Manage your profile, worship preferences, notifications, and app display.",
-  saved: "Changes saved",
-  langTitle: "Language",
-  langDesc: "Choose the app display language.",
-  profileTitle: "Profile",
-  profileDesc: "Information shown on the dashboard and share card.",
-  nameLabel: "Display name",
-  nameHint: "Leave empty to use default \"Musafir\".",
-  prayerTitle: "Prayer Times",
-  prayerDesc: "Calculation method and madhab for prayer time computation.",
-  calcLabel: "Calculation method",
-  madhabLabel: "Asr madhab",
-  madhabHint: "Hanafi: shadow 2x object length. Others: 1x.",
-  quranTitle: "Al-Quran",
-  quranDesc: "Audio and display preferences when reading Al-Quran.",
-  qariLabel: "Reciter (audio)",
-  qariHint: "Listened surah audio is cached for offline use.",
-  latinLabel: "Show transliteration",
-  latinDesc: "Display Latin text below Arabic verses.",
-  notifTitle: "Notifications & Feedback",
-  notifDesc: "Prayer reminders and haptic responses.",
-  prayerNotifLabel: "Prayer time reminder",
-  prayerNotifDesc: "Show browser notification when prayer time enters (only while tab is open).",
-  vibrateLabel: "Vibration",
-  vibrateDesc: "Vibrate device when counting dzikir / tasbih.",
-  aboutTitle: "About",
-  aboutDesc: "Technical info and important notes.",
-  version: "Version",
-  storage: "Storage",
-  hijriNote: "Hijri dates use the Umm Al-Qura (calculated) calendar which may differ by 1 day from official sighting. For Ramadan, Eid, and Dhul Hijjah, always refer to official announcements.",
-};
-
 /* ─── Icons ─── */
 
 function CheckCircleIcon({ className }: { className?: string }) {
@@ -404,15 +334,6 @@ function MosqueIcon() {
       <path d="M4 21V10a8 8 0 0 1 16 0v11" />
       <path d="M8 21v-5a4 4 0 0 1 8 0v5" />
       <path d="M12 3v3" />
-    </svg>
-  );
-}
-
-function BookIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 4h5a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4V4Z" />
-      <path d="M20 4h-5a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h6V4Z" />
     </svg>
   );
 }

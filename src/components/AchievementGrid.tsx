@@ -3,16 +3,18 @@
 import { PageHeader } from "@/components/PageHeader";
 import { evaluateAll, type Achievement } from "@/lib/achievements";
 import { useMuslimState } from "@/lib/useMuslimState";
+import { useT, type TKey } from "@/lib/i18n";
 
-const CATEGORY_LABEL: Record<Achievement["category"], string> = {
-  streak: "Streak",
-  salat: "Salat",
-  quran: "Al-Quran",
-  mihrab: "Mihrab",
-  xp: "XP",
+const CATEGORY_KEY: Record<Achievement["category"], TKey> = {
+  streak: "achievement.cat.streak",
+  salat: "achievement.cat.salat",
+  quran: "achievement.cat.quran",
+  mihrab: "achievement.cat.mihrab",
+  xp: "achievement.cat.xp",
 };
 
 export function AchievementGrid() {
+  const { t } = useT();
   const { progress, quests, hydrated, claimAchievement } = useMuslimState();
   const evaluated = evaluateAll(progress, quests);
   const unlocked = evaluated.filter((a) => a.unlocked).length;
@@ -34,9 +36,9 @@ export function AchievementGrid() {
   return (
     <div className="space-y-4 sm:space-y-5">
       <PageHeader
-        eyebrow="Achievement"
-        title="Pencapaianmu"
-        description={`Kumpulkan badge sebagai milestone perjalananmu. ${unlocked} dari ${total} terbuka.`}
+        eyebrow={t("achievement.eyebrow")}
+        title={t("achievement.title")}
+        description={`${t("achievement.description")} ${unlocked} / ${total}`}
         back={{ href: "/", label: "Dashboard" }}
       />
 
@@ -45,17 +47,17 @@ export function AchievementGrid() {
         <div className="card flex items-center justify-between gap-3 p-4 sm:p-5">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-emerald-800 dark:text-parchment-50">
-              {unclaimedIds.length} achievement baru!
+              {unclaimedIds.length} {t("achievement.newBadges")}
             </p>
             <p className="text-xs text-emerald-700/70 dark:text-parchment-100/60">
-              Klaim untuk menghilangkan notifikasi.
+              {t("achievement.claimHint")}
             </p>
           </div>
           <button
             onClick={claimAll}
             className="shrink-0 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 px-4 py-2 text-sm font-bold text-emerald-950 shadow-glow-amber transition hover:from-amber-300 hover:to-amber-500"
           >
-            Klaim Semua
+            {t("achievement.claimAll")}
           </button>
         </div>
       )}
@@ -63,7 +65,7 @@ export function AchievementGrid() {
       <section className="card p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-lg font-bold text-emerald-800 dark:text-parchment-50 sm:text-xl">
-            Semua Badge
+            {t("achievement.allBadges")}
           </h2>
           <div className="text-sm text-emerald-700/70 dark:text-parchment-100/60">
             {unlocked} / {total}
@@ -102,7 +104,7 @@ export function AchievementGrid() {
                         {def.name}
                       </h3>
                       <span className="shrink-0 rounded-full bg-parchment-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80 dark:bg-space-800 dark:text-parchment-100/70">
-                        {CATEGORY_LABEL[def.category]}
+                        {t(CATEGORY_KEY[def.category])}
                       </span>
                     </div>
                     <p className="mt-1 break-words text-sm text-emerald-700/80 dark:text-parchment-100/70">
@@ -128,12 +130,12 @@ export function AchievementGrid() {
                             onClick={() => claimSingle(def.id)}
                             className="rounded-lg bg-amber-400 px-2.5 py-1 text-[11px] font-bold text-emerald-950 transition hover:bg-amber-300"
                           >
-                            Klaim
+                            {t("achievement.claim")}
                           </button>
                         )}
                         {isUnlocked && isClaimed && (
                           <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                            ✓ Diklaim
+                            ✓ {t("achievement.claimedLabel")}
                           </span>
                         )}
                       </div>
