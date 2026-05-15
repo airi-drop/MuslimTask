@@ -1,40 +1,42 @@
+"use client";
+
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
-
-const SECTIONS = [
-  {
-    href: "/mihrab/quran",
-    title: "Al-Quran Digital",
-    description:
-      "114 surah dengan terjemahan Bahasa Indonesia. Tersimpan offline, bisa dibaca kapan saja.",
-    icon: "quran" as const,
-    accent: "from-emerald-600 to-emerald-900",
-  },
-  {
-    href: "/mihrab/doa",
-    title: "Doa Harian",
-    description:
-      "Kumpulan doa untuk aktivitas sehari-hari — bangun tidur, makan, perjalanan, dan lainnya.",
-    icon: "hands" as const,
-    accent: "from-emerald-700 to-emerald-950",
-  },
-  {
-    href: "/mihrab/dzikir",
-    title: "Dzikir Pagi & Petang",
-    description:
-      "Wirid harian dari Al-Ma'tsurat dan Hisnul Muslim, dengan penghitung tap-to-count.",
-    icon: "beads" as const,
-    accent: "from-emerald-800 to-space-950",
-  },
-];
+import { useT } from "@/lib/i18n";
 
 export default function MihrabHubPage() {
+  const { t } = useT();
+
+  const SECTIONS = [
+    {
+      href: "/mihrab/quran",
+      title: t("mihrab.quran"),
+      description: t("mihrab.quranDesc"),
+      icon: "quran" as const,
+      accent: "from-emerald-600 to-emerald-900",
+    },
+    {
+      href: "/mihrab/doa",
+      title: t("mihrab.doa"),
+      description: t("mihrab.doaDesc"),
+      icon: "hands" as const,
+      accent: "from-emerald-700 to-emerald-950",
+    },
+    {
+      href: "/mihrab/dzikir",
+      title: t("mihrab.dzikir"),
+      description: t("mihrab.dzikirDesc"),
+      icon: "beads" as const,
+      accent: "from-emerald-800 to-space-950",
+    },
+  ];
+
   return (
     <div className="space-y-4 sm:space-y-5">
       <PageHeader
-        eyebrow="Mihrab"
-        title="Ruang Mihrab"
-        description="Konten ibadah harianmu — Al-Quran, doa, dzikir. Tersimpan offline. (Mihrab: ceruk pengingat arah kiblat dalam masjid.)"
+        eyebrow={t("mihrab.eyebrow")}
+        title={t("mihrab.title")}
+        description={t("mihrab.description")}
         back={{ href: "/", label: "Dashboard" }}
       />
 
@@ -62,7 +64,7 @@ export default function MihrabHubPage() {
               </p>
             </div>
             <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 dark:text-neon-400">
-              Buka
+              {t("mihrab.open")}
               <ArrowRightIcon className="h-4 w-4 transition group-hover:translate-x-1" />
             </span>
           </Link>

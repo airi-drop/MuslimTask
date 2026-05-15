@@ -139,19 +139,51 @@ type Dict = {
   "quest.description": string;
   "quest.daily": string;
   "quest.weekly": string;
+  "quest.dailyQuest": string;
+  "quest.weeklyQuest": string;
+  "quest.resetMidnight": string;
+  "quest.resetMonday": string;
+  "quest.syncDashboard": string;
+  "quest.syncDesc": string;
+  "quest.done": string;
+  "quest.now": string;
+  "quest.mainTime": string;
+  "quest.openDashboard": string;
+  "quest.undo": string;
+  "quest.claim": string;
 
   // Statistik
   "statistik.eyebrow": string;
   "statistik.title": string;
   "statistik.description": string;
+  "statistik.highlight": string;
+  "statistik.days30": string;
+  "statistik.thisWeek": string;
+  "statistik.prayerPerDay": string;
+  "statistik.weekTarget": string;
+  "statistik.summary": string;
+  "statistik.totalPrayers30": string;
+  "statistik.perfectDays": string;
+  "statistik.incompleteDays": string;
+  "statistik.xpMonth": string;
+  "statistik.mostConsistent": string;
+  "statistik.perPrayer": string;
+  "statistik.heatmap": string;
+  "statistik.less": string;
+  "statistik.more": string;
+  "statistik.loading": string;
 
   // Mihrab
   "mihrab.eyebrow": string;
   "mihrab.title": string;
   "mihrab.description": string;
   "mihrab.quran": string;
+  "mihrab.quranDesc": string;
   "mihrab.doa": string;
+  "mihrab.doaDesc": string;
   "mihrab.dzikir": string;
+  "mihrab.dzikirDesc": string;
+  "mihrab.open": string;
 
   // Quran
   "quran.eyebrow": string;
@@ -304,21 +336,53 @@ const id: Dict = {
   "achievement.cat.xp": "XP",
 
   "quest.eyebrow": "Quest",
-  "quest.title": "Quest Hari Ini",
-  "quest.description": "Selesaikan quest harian dan mingguan untuk mengumpulkan XP.",
+  "quest.title": "Papan Quest",
+  "quest.description": "Selesaikan misi harian & mingguan. Setiap quest selesai memberi XP.",
   "quest.daily": "Harian",
   "quest.weekly": "Mingguan",
+  "quest.dailyQuest": "Quest Harian",
+  "quest.weeklyQuest": "Quest Mingguan",
+  "quest.resetMidnight": "reset 00:00",
+  "quest.resetMonday": "reset Senin",
+  "quest.syncDashboard": "Sinkron Dashboard",
+  "quest.syncDesc": "Tandai di Dashboard. Setiap salat memberi +10 XP — total 50 XP untuk 5 waktu.",
+  "quest.done": "Selesai",
+  "quest.now": "Sekarang",
+  "quest.mainTime": "Waktu utama",
+  "quest.openDashboard": "Buka Dashboard →",
+  "quest.undo": "Batal",
+  "quest.claim": "Klaim",
 
   "statistik.eyebrow": "Statistik",
-  "statistik.title": "Statistik",
-  "statistik.description": "Lihat konsistensi ibadahmu dari waktu ke waktu.",
+  "statistik.title": "Konsistensi Ibadah",
+  "statistik.description": "Ritme ibadahmu dalam minggu dan bulan ini.",
+  "statistik.highlight": "Highlight",
+  "statistik.days30": "30 hari",
+  "statistik.thisWeek": "Minggu Ini",
+  "statistik.prayerPerDay": "Salat per Hari",
+  "statistik.weekTarget": "target minggu",
+  "statistik.summary": "Ringkasan",
+  "statistik.totalPrayers30": "Total salat 30 hari",
+  "statistik.perfectDays": "Hari sempurna",
+  "statistik.incompleteDays": "Hari belum lengkap",
+  "statistik.xpMonth": "XP bulan ini",
+  "statistik.mostConsistent": "Paling konsisten",
+  "statistik.perPrayer": "Per Waktu Salat (30 hari)",
+  "statistik.heatmap": "Heatmap 30 Hari",
+  "statistik.less": "Sedikit",
+  "statistik.more": "Banyak",
+  "statistik.loading": "Memuat data…",
 
   "mihrab.eyebrow": "Mihrab",
-  "mihrab.title": "Mihrab",
-  "mihrab.description": "Ruang ibadah digital — Al-Quran, Doa harian, dan Dzikir.",
-  "mihrab.quran": "Al-Quran",
+  "mihrab.title": "Ruang Mihrab",
+  "mihrab.description": "Konten ibadah harianmu — Al-Quran, doa, dzikir. Tersimpan offline.",
+  "mihrab.quran": "Al-Quran Digital",
+  "mihrab.quranDesc": "114 surah dengan terjemahan Bahasa Indonesia. Tersimpan offline.",
   "mihrab.doa": "Doa Harian",
-  "mihrab.dzikir": "Dzikir",
+  "mihrab.doaDesc": "Kumpulan doa untuk aktivitas sehari-hari.",
+  "mihrab.dzikir": "Dzikir Pagi & Petang",
+  "mihrab.dzikirDesc": "Wirid harian dengan penghitung tap-to-count.",
+  "mihrab.open": "Buka",
 
   "quran.eyebrow": "Mihrab / Al-Quran",
   "quran.title": "Al-Quran",
@@ -468,21 +532,53 @@ const en: Dict = {
   "achievement.cat.xp": "XP",
 
   "quest.eyebrow": "Quest",
-  "quest.title": "Today's Quests",
-  "quest.description": "Complete daily and weekly quests to earn XP.",
+  "quest.title": "Quest Board",
+  "quest.description": "Complete daily & weekly missions. Each quest gives XP.",
   "quest.daily": "Daily",
   "quest.weekly": "Weekly",
+  "quest.dailyQuest": "Daily Quests",
+  "quest.weeklyQuest": "Weekly Quests",
+  "quest.resetMidnight": "resets 00:00",
+  "quest.resetMonday": "resets Monday",
+  "quest.syncDashboard": "Synced from Dashboard",
+  "quest.syncDesc": "Mark on Dashboard. Each prayer gives +10 XP — 50 XP total for all 5.",
+  "quest.done": "Done",
+  "quest.now": "Now",
+  "quest.mainTime": "Main time",
+  "quest.openDashboard": "Open Dashboard →",
+  "quest.undo": "Undo",
+  "quest.claim": "Claim",
 
   "statistik.eyebrow": "Statistics",
-  "statistik.title": "Statistics",
-  "statistik.description": "Track your worship consistency over time.",
+  "statistik.title": "Worship Consistency",
+  "statistik.description": "Your worship rhythm this week and month.",
+  "statistik.highlight": "Highlight",
+  "statistik.days30": "30 days",
+  "statistik.thisWeek": "This Week",
+  "statistik.prayerPerDay": "Prayers per Day",
+  "statistik.weekTarget": "week target",
+  "statistik.summary": "Summary",
+  "statistik.totalPrayers30": "Total prayers (30d)",
+  "statistik.perfectDays": "Perfect days",
+  "statistik.incompleteDays": "Incomplete days",
+  "statistik.xpMonth": "XP this month",
+  "statistik.mostConsistent": "Most consistent",
+  "statistik.perPrayer": "Per Prayer Time (30 days)",
+  "statistik.heatmap": "30-Day Heatmap",
+  "statistik.less": "Less",
+  "statistik.more": "More",
+  "statistik.loading": "Loading data…",
 
   "mihrab.eyebrow": "Mihrab",
-  "mihrab.title": "Mihrab",
-  "mihrab.description": "Digital worship space — Al-Quran, daily prayers, and dhikr.",
-  "mihrab.quran": "Al-Quran",
+  "mihrab.title": "Mihrab Space",
+  "mihrab.description": "Your daily worship content — Al-Quran, prayers, dhikr. Stored offline.",
+  "mihrab.quran": "Al-Quran Digital",
+  "mihrab.quranDesc": "114 surahs with Indonesian translation. Stored offline.",
   "mihrab.doa": "Daily Prayers",
-  "mihrab.dzikir": "Dhikr",
+  "mihrab.doaDesc": "Collection of prayers for daily activities.",
+  "mihrab.dzikir": "Morning & Evening Dhikr",
+  "mihrab.dzikirDesc": "Daily wirds with tap-to-count tracker.",
+  "mihrab.open": "Open",
 
   "quran.eyebrow": "Mihrab / Al-Quran",
   "quran.title": "Al-Quran",

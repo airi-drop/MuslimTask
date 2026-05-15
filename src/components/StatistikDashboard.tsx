@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { useT, type TKey } from "@/lib/i18n";
 import {
   PRAYER_LABEL,
   buildSummary,
@@ -15,6 +16,7 @@ import { useMuslimState } from "@/lib/useMuslimState";
 import { TARGET_PRAYERS_PER_DAY, type PrayerKey } from "@/lib/progress";
 
 export function StatistikDashboard() {
+  const { t } = useT();
   const { progress, hydrated } = useMuslimState();
 
   const week = useMemo(() => getWeekBars(progress), [progress]);
@@ -30,9 +32,9 @@ export function StatistikDashboard() {
   return (
     <div className="space-y-4 sm:space-y-5">
       <PageHeader
-        eyebrow="Statistik"
-        title="Konsistensi Ibadah"
-        description="Ritme ibadahmu dalam minggu dan bulan ini. Data dihitung dari riwayat checklist salat di Dashboard."
+        eyebrow={t("statistik.eyebrow")}
+        title={t("statistik.title")}
+        description={t("statistik.description")}
         back={{ href: "/", label: "Dashboard" }}
       />
 
@@ -43,7 +45,7 @@ export function StatistikDashboard() {
         <div className="relative grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div className="min-w-0">
             <div className="text-[11px] font-semibold uppercase tracking-[0.25em] text-neon-400">
-              Highlight
+              {t("statistik.highlight")}
             </div>
             <h2 className="mt-1 font-display text-2xl font-bold text-parchment-50 sm:text-3xl">
               {highlight.title}
@@ -57,7 +59,7 @@ export function StatistikDashboard() {
               {summary.consistency30d}%
             </span>
             <span className="text-[10px] font-semibold uppercase tracking-widest text-parchment-100/60">
-              30 hari
+              {t("statistik.days30")}
             </span>
           </div>
         </div>
@@ -69,10 +71,10 @@ export function StatistikDashboard() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
               <div className="text-[11px] font-semibold uppercase tracking-widest text-emerald-600/70 dark:text-neon-500/70">
-                Minggu Ini
+                {t("statistik.thisWeek")}
               </div>
               <h2 className="font-display text-lg font-bold text-emerald-800 dark:text-parchment-50 sm:text-xl">
-                Salat per Hari
+                {t("statistik.prayerPerDay")}
               </h2>
             </div>
             <div className="text-right">
@@ -83,7 +85,7 @@ export function StatistikDashboard() {
                 </span>
               </div>
               <div className="text-xs text-emerald-700/70 dark:text-parchment-100/60">
-                {weekPct}% target minggu
+                {weekPct}% {t("statistik.weekTarget")}
               </div>
             </div>
           </div>
@@ -92,25 +94,25 @@ export function StatistikDashboard() {
 
         <section className="card min-w-0 p-5 sm:p-6">
           <h2 className="font-display text-lg font-bold text-emerald-800 dark:text-parchment-50 sm:text-xl">
-            Ringkasan
+            {t("statistik.summary")}
           </h2>
           <ul className="mt-4 space-y-3 text-sm">
             <Row
-              label="Total salat 30 hari"
+              label={t("statistik.totalPrayers30")}
               value={`${summary.totalPrayers30d} / ${summary.prayerTarget30d}`}
             />
             <Row
-              label="Hari sempurna"
+              label={t("statistik.perfectDays")}
               value={summary.perfectDays30d.toString()}
             />
             <Row
-              label="Hari belum lengkap"
+              label={t("statistik.incompleteDays")}
               value={summary.incompleteDays30d.toString()}
             />
-            <Row label="XP bulan ini" value={`${summary.xp30d} XP`} />
+            <Row label={t("statistik.xpMonth")} value={`${summary.xp30d} XP`} />
             {summary.bestPrayer && summary.bestPrayer.pct > 0 && (
               <Row
-                label="Paling konsisten"
+                label={t("statistik.mostConsistent")}
                 value={`${PRAYER_LABEL[summary.bestPrayer.key]} (${summary.bestPrayer.pct}%)`}
               />
             )}
@@ -121,7 +123,7 @@ export function StatistikDashboard() {
       {/* Per-prayer breakdown */}
       <section className="card p-5 sm:p-6">
         <h2 className="font-display text-lg font-bold text-emerald-800 dark:text-parchment-50 sm:text-xl">
-          Per Waktu Salat (30 hari)
+          {t("statistik.perPrayer")}
         </h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {(Object.keys(summary.perPrayer30d) as PrayerKey[]).map((key) => {
@@ -178,9 +180,9 @@ export function StatistikDashboard() {
       <section className="card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-lg font-bold text-emerald-800 dark:text-parchment-50 sm:text-xl">
-            Heatmap 30 Hari
+            {t("statistik.heatmap")}
           </h2>
-          <Legend />
+          <Legend t={t} />
         </div>
         <div className="mt-4 grid grid-cols-10 gap-1 sm:grid-cols-15 lg:grid-cols-30">
           {heatmap.map((d) => (
@@ -189,7 +191,7 @@ export function StatistikDashboard() {
         </div>
         {!hydrated && (
           <p className="mt-3 text-xs text-emerald-700/60 dark:text-parchment-100/50">
-            Memuat data…
+            {t("statistik.loading")}
           </p>
         )}
       </section>
@@ -288,16 +290,16 @@ function HeatmapCell({ day }: { day: DailyBar }) {
   );
 }
 
-function Legend() {
+function Legend({ t }: { t: (key: TKey) => string }) {
   return (
     <div className="flex items-center gap-1.5 text-[11px] text-emerald-700/70 dark:text-parchment-100/60">
-      <span>Sedikit</span>
+      <span>{t("statistik.less")}</span>
       <span className="h-3 w-3 rounded-sm bg-parchment-200 dark:bg-space-900" />
       <span className="h-3 w-3 rounded-sm bg-emerald-200 dark:bg-emerald-900/60" />
       <span className="h-3 w-3 rounded-sm bg-emerald-400/80 dark:bg-emerald-700" />
       <span className="h-3 w-3 rounded-sm bg-emerald-500" />
       <span className="h-3 w-3 rounded-sm bg-gradient-to-br from-amber-400 to-amber-500" />
-      <span>Banyak</span>
+      <span>{t("statistik.more")}</span>
     </div>
   );
 }

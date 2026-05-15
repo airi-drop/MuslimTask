@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AchievementToast } from "@/components/AchievementToast";
 import { PageHeader } from "@/components/PageHeader";
+import { useT, type TKey } from "@/lib/i18n";
 import {
   DAILY_QUESTS,
   WEEKLY_QUESTS,
@@ -27,6 +28,7 @@ type Tab = "daily" | "weekly";
 const SYNCED_QUEST_IDS = new Set(["salat-5"]);
 
 export function QuestBoard() {
+  const { t } = useT();
   const {
     hydrated,
     progress,
@@ -128,9 +130,9 @@ export function QuestBoard() {
       <AchievementToast ids={unlockedNow} onDismiss={clearUnlockedNow} />
 
       <PageHeader
-        eyebrow="Quest"
-        title="Papan Quest"
-        description="Selesaikan misi harian & mingguan. Setiap quest selesai memberi XP — naikkan level, kumpulkan badge, jaga streak."
+        eyebrow={t("quest.eyebrow")}
+        title={t("quest.title")}
+        description={t("quest.description")}
         back={{ href: "/", label: "Dashboard" }}
       />
 
@@ -142,6 +144,7 @@ export function QuestBoard() {
           done={stats.dailyDone}
           total={DAILY_QUESTS.length}
           xp={stats.dailyXp}
+          t={t}
         />
         <SummaryTile
           tab="weekly"
@@ -150,6 +153,7 @@ export function QuestBoard() {
           done={stats.weeklyDone}
           total={WEEKLY_QUESTS.length}
           xp={stats.weeklyXp}
+          t={t}
         />
       </section>
 
@@ -167,6 +171,7 @@ export function QuestBoard() {
               disabled={!hydrated}
               onIncrement={() => increment(q)}
               onReset={() => reset(q)}
+              t={t}
             />
           );
         })}
@@ -182,6 +187,7 @@ function SummaryTile({
   done,
   total,
   xp,
+  t,
 }: {
   tab: Tab;
   active: boolean;
@@ -189,6 +195,7 @@ function SummaryTile({
   done: number;
   total: number;
   xp: number;
+  t: (key: TKey) => string;
 }) {
   const pct = Math.round((done / total) * 100);
   return (
@@ -203,14 +210,14 @@ function SummaryTile({
       <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-neon-400/10 blur-2xl" />
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-600/80 dark:text-neon-500/80">
-          {tab === "daily" ? "Harian" : "Mingguan"}
+          {tab === "daily" ? t("quest.daily") : t("quest.weekly")}
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700/60 dark:text-parchment-100/60">
-          {tab === "daily" ? "reset 00:00" : "reset Senin"}
+          {tab === "daily" ? t("quest.resetMidnight") : t("quest.resetMonday")}
         </span>
       </div>
       <h2 className="mt-1 font-display text-xl font-bold text-emerald-800 dark:text-parchment-50 sm:text-2xl">
-        {tab === "daily" ? "Quest Harian" : "Quest Mingguan"}
+        {tab === "daily" ? t("quest.dailyQuest") : t("quest.weeklyQuest")}
       </h2>
       <div className="mt-3 flex items-baseline gap-3">
         <span className="font-display text-3xl font-bold text-emerald-800 dark:text-parchment-50">
@@ -239,6 +246,7 @@ function QuestRow({
   onIncrement,
   onReset,
   disabled,
+  t,
 }: {
   def: QuestDef;
   state: QuestState;
@@ -247,6 +255,7 @@ function QuestRow({
   onIncrement: () => void;
   onReset: () => void;
   disabled?: boolean;
+  t: (key: TKey) => string;
 }) {
   const pct = Math.round((state.count / def.target) * 100);
   const Icon = ICONS[def.category];
@@ -279,12 +288,12 @@ function QuestRow({
             )}
             {synced && (
               <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-900/60 dark:text-neon-400">
-                Sinkron Dashboard
+                {t("quest.syncDashboard")}
               </span>
             )}
             {state.done && (
               <span className="shrink-0 rounded-full bg-neon-400/15 px-2 py-0.5 text-[11px] font-bold text-neon-600 dark:text-neon-400">
-                ✓ Selesai
+                {`✓ ${t("quest.done")}`}
               </span>
             )}
             {win && !state.done && (
@@ -296,18 +305,18 @@ function QuestRow({
                 }`}
                 title={win.description}
               >
-                {win.active ? "● Sekarang" : `⏳ ${win.statusLabel}`}
+                {win.active ? `● ${t("quest.now")}` : `⏳ ${win.statusLabel}`}
               </span>
             )}
           </div>
           <p className="mt-1 break-words text-sm text-emerald-700/80 dark:text-parchment-100/70">
             {synced
-              ? "Tandai di Dashboard. Setiap salat memberi +10 XP — total 50 XP untuk 5 waktu."
+              ? t("quest.syncDesc")
               : def.description}
           </p>
           {win && !state.done && !win.active && (
             <p className="mt-1 break-words text-[11px] text-emerald-700/60 dark:text-parchment-100/50">
-              Waktu utama: {win.label}
+              {t("quest.mainTime")}: {win.label}
             </p>
           )}
 
@@ -334,7 +343,7 @@ function QuestRow({
               href="/"
               className="flex-1 rounded-xl border border-emerald-100 bg-white px-3 py-2 text-center text-xs font-semibold text-emerald-700 transition hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100 dark:hover:bg-space-900 sm:flex-none"
             >
-              Buka Dashboard →
+              {t("quest.openDashboard")}
             </Link>
           ) : state.done ? (
             <button
@@ -342,7 +351,7 @@ function QuestRow({
               disabled={disabled}
               className="flex-1 rounded-xl border border-emerald-100 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100 dark:hover:bg-space-900 sm:flex-none"
             >
-              Batal
+              {t("quest.undo")}
             </button>
           ) : (
             <button
@@ -350,7 +359,7 @@ function QuestRow({
               disabled={disabled}
               className="flex-1 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 px-4 py-2 text-sm font-semibold text-parchment-50 shadow-glow ring-1 ring-emerald-700 transition hover:from-emerald-500 hover:to-emerald-700 disabled:opacity-60 sm:flex-none"
             >
-              {def.target > 1 ? "+1" : "Klaim"}
+              {def.target > 1 ? "+1" : t("quest.claim")}
             </button>
           )}
         </div>
