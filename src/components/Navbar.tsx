@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useMuslimState } from "@/lib/useMuslimState";
-import { evaluateAll } from "@/lib/achievements";
+import { unclaimedAchievementCount } from "@/lib/progress";
 
 /* ─── Bottom tab bar items (mobile) ─── */
 type TabItem = {
@@ -35,10 +35,9 @@ const DESKTOP_ITEMS: NavItem[] = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { progress, quests } = useMuslimState();
+  const { progress } = useMuslimState();
 
-  const evaluated = evaluateAll(progress, quests);
-  const unlockedCount = evaluated.filter((e) => e.unlocked).length;
+  const unlockedCount = unclaimedAchievementCount(progress);
 
   return (
     <>

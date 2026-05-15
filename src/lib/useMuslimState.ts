@@ -5,6 +5,7 @@ import {
   EMPTY_PROGRESS,
   loadProgress,
   markSaveEventsSeen,
+  claimAchievements,
   saveProgress,
   unseenSaveEvents,
   type Progress,
@@ -44,6 +45,8 @@ export type MuslimState = {
   setQuests: (mutator: (q: QuestStore) => QuestStore) => void;
   clearUnlockedNow: () => void;
   acknowledgeSave: () => void;
+  /** Mark achievement IDs as claimed/seen so bell badge clears. */
+  claimAchievement: (ids: string[]) => void;
 };
 
 export function useMuslimState(): MuslimState {
@@ -134,6 +137,14 @@ export function useMuslimState(): MuslimState {
     setProgressState(updated);
   }, []);
 
+  /** Mark achievement IDs as claimed so bell badge count decreases. */
+  const claimAchievement = useCallback((ids: string[]) => {
+    if (ids.length === 0) return;
+    const updated = claimAchievements(progressRef.current, ids);
+    saveProgress(updated);
+    setProgressState(updated);
+  }, []);
+
   // The pending saves = all unseen save dates.
   const pendingSaves = unseenSaveEvents(progress);
 
@@ -147,5 +158,6 @@ export function useMuslimState(): MuslimState {
     setQuests,
     clearUnlockedNow,
     acknowledgeSave,
+    claimAchievement,
   };
 }

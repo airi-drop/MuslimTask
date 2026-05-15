@@ -24,6 +24,8 @@ export type Progress = {
   history: Record<string, DayRecord>;
   /** Achievement IDs that have been unlocked. */
   unlockedAchievements: string[];
+  /** Achievement IDs the user has explicitly claimed/seen on the page. */
+  seenAchievements: string[];
   /** Last time we recomputed — used to skip work if same minute. */
   lastRecomputed?: string;
   /** Days (YYYY-MM-DD) where a life was spent to save the streak. */
@@ -50,6 +52,7 @@ export const EMPTY_PROGRESS: Progress = {
   todayXp: 0,
   history: {},
   unlockedAchievements: [],
+  seenAchievements: [],
   livesSpentOn: [],
   saveEventsSeen: [],
 };
@@ -80,6 +83,7 @@ export function loadProgress(): Progress {
     ...p,
     history: p.history ?? {},
     unlockedAchievements: p.unlockedAchievements ?? [],
+    seenAchievements: (p as Progress).seenAchievements ?? [],
     livesSpentOn: p.livesSpentOn ?? [],
     saveEventsSeen: p.saveEventsSeen ?? [],
   };
@@ -346,4 +350,19 @@ export function markSaveEventsSeen(p: Progress, ids: string[]): Progress {
   if (ids.length === 0) return p;
   const set = new Set([...p.saveEventsSeen, ...ids]);
   return { ...p, saveEventsSeen: Array.from(set) };
+}
+
+/* ---------- Achievement claim helpers ---------- */
+
+/** Mark achievements as seen/claimed by the user. */
+export function claimAchievements(p: Progress, ids: string[]): Progress {
+  if (ids.length === 0) return p;
+  const set = new Set([...p.seenAchievements, ...ids]);
+  return { ...p, seenAchievements: Array.from(set) };
+}
+
+/** Count unlocked achievements that haven't been claimed/seen yet. */
+export function unclaimedAchievementCount(p: Progress): number {
+  const seen = new Set(p.seenAchievements);
+  return p.unlockedAchievements.filter((id) => !seen.has(id)).length;
 }
