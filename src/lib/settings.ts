@@ -12,6 +12,8 @@ export type Madhab = "Shafi" | "Hanafi";
 
 export type Qari = "alafasy" | "minshawi" | "sudais";
 
+export type Language = "id" | "en";
+
 export type Settings = {
   /** User-visible name. Empty string = use default "Musafir". */
   username: string;
@@ -27,6 +29,8 @@ export type Settings = {
   qari: Qari;
   /** Show transliteration in Quran reader by default. */
   showLatin: boolean;
+  /** UI language. */
+  language: Language;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
   vibrate: true,
   qari: "alafasy",
   showLatin: true,
+  language: "id",
 };
 
 export function loadSettings(): Settings {
@@ -95,4 +100,9 @@ export const QARI_KEY: Record<Qari, "01" | "02" | "03" | "04" | "05"> = {
   alafasy: "05",
   minshawi: "01",
   sudais: "03",
+};
+
+export const LANGUAGE_LABEL: Record<Language, string> = {
+  id: "Bahasa Indonesia",
+  en: "English",
 };
