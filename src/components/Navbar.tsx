@@ -17,8 +17,6 @@ const ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/" },
   { label: "Quest", href: "/quest" },
   { label: "Tasbih", href: "/tasbih" },
-  { label: "Statistik", href: "/statistik" },
-  { label: "Achievement", href: "/achievement" },
   { label: "Mihrab", href: "/mihrab", hasDropdown: true },
 ];
 
@@ -95,13 +93,6 @@ export function Navbar() {
         </div>
         <ThemeToggle />
         <Link
-          href="/settings"
-          aria-label="Pengaturan"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-emerald-100 bg-white text-emerald-700 hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100"
-        >
-          <GearIcon className="h-5 w-5" />
-        </Link>
-        <Link
           href="/achievement"
           aria-label="Achievement"
           className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-emerald-100 bg-white text-emerald-700 hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100"
@@ -113,19 +104,30 @@ export function Navbar() {
             </span>
           )}
         </Link>
-        <div className="hidden items-center gap-2 rounded-full border border-emerald-100 bg-white py-1 pl-1 pr-3 dark:border-emerald-900/60 dark:bg-space-800 lg:flex">
+        <Link
+          href="/settings"
+          aria-label="Pengaturan"
+          className="hidden items-center gap-2 rounded-full border border-emerald-100 bg-white py-1 pl-1 pr-3 hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:hover:bg-space-900 lg:flex"
+        >
           <div className="grid h-8 w-8 place-items-center rounded-full bg-emerald-100 font-semibold text-emerald-800 dark:bg-emerald-900 dark:text-neon-400">
-            A
+            <GearIcon className="h-4 w-4" />
           </div>
           <div className="leading-tight">
             <div className="text-sm font-semibold text-emerald-800 dark:text-parchment-50">
               Admin
             </div>
             <div className="text-[10px] tracking-widest text-emerald-600/70 dark:text-neon-500/70">
-              MUSAFIR
+              PENGATURAN
             </div>
           </div>
-        </div>
+        </Link>
+        <Link
+          href="/settings"
+          aria-label="Pengaturan"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-emerald-100 bg-white text-emerald-700 hover:bg-parchment-50 dark:border-emerald-900/60 dark:bg-space-800 dark:text-parchment-100 lg:hidden"
+        >
+          <GearIcon className="h-5 w-5" />
+        </Link>
       </div>
     </nav>
   );
