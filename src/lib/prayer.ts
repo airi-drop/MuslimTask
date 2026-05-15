@@ -2,10 +2,11 @@ import {
   Coordinates,
   CalculationMethod,
   PrayerTimes,
-  Madhab,
+  Madhab as AdhanMadhab,
   type CalculationParameters,
 } from "adhan";
 import type { Location } from "./location";
+import { loadSettings, type CalcMethod, type Madhab } from "./settings";
 
 export type PrayerKey = "fajr" | "sunrise" | "dhuhr" | "asr" | "maghrib" | "isha";
 
@@ -27,13 +28,38 @@ const NAMES: Record<PrayerKey, string> = {
   isha: "Isya",
 };
 
-function params(): CalculationParameters {
-  // Indonesia: Kementerian Agama umumnya pakai sudut 20°/18°, dekat dengan
-  // metode "Singapore" (20/18) atau "MuslimWorldLeague" (18/17). Kita pakai
-  // Singapore karena lebih cocok untuk wilayah khatulistiwa.
-  const p = CalculationMethod.Singapore();
-  p.madhab = Madhab.Shafi;
+function buildParams(method: CalcMethod, madhab: Madhab): CalculationParameters {
+  let p: CalculationParameters;
+  switch (method) {
+    case "Kemenag":
+      // Kemenag Indonesia: Subuh 20°, Isya 18° — same as Singapore method.
+      p = CalculationMethod.Singapore();
+      break;
+    case "Singapore":
+      p = CalculationMethod.Singapore();
+      break;
+    case "MuslimWorldLeague":
+      p = CalculationMethod.MuslimWorldLeague();
+      break;
+    case "Egyptian":
+      p = CalculationMethod.Egyptian();
+      break;
+    case "Karachi":
+      p = CalculationMethod.Karachi();
+      break;
+    case "UmmAlQura":
+      p = CalculationMethod.UmmAlQura();
+      break;
+    default:
+      p = CalculationMethod.Singapore();
+  }
+  p.madhab = madhab === "Hanafi" ? AdhanMadhab.Hanafi : AdhanMadhab.Shafi;
   return p;
+}
+
+function params(): CalculationParameters {
+  const s = loadSettings();
+  return buildParams(s.calcMethod, s.madhab);
 }
 
 export function getPrayerTimes(loc: Location, date: Date = new Date()): PrayerSlot[] {

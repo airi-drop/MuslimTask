@@ -25,17 +25,18 @@ import {
   getQuestState,
 } from "@/lib/quests";
 import { useMuslimState } from "@/lib/useMuslimState";
+import { loadSettings } from "@/lib/settings";
 
 const DZIKIR_PAGI_DEF = DAILY_QUESTS.find((q) => q.id === "dzikir-pagi")!;
 const DZIKIR_PETANG_DEF = DAILY_QUESTS.find((q) => q.id === "dzikir-petang")!;
 
 function vibrate(ms: number | number[]) {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    try {
-      navigator.vibrate(ms);
-    } catch {
-      /* ignore */
-    }
+  if (typeof navigator === "undefined" || !("vibrate" in navigator)) return;
+  if (!loadSettings().vibrate) return;
+  try {
+    navigator.vibrate(ms);
+  } catch {
+    /* ignore */
   }
 }
 

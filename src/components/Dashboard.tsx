@@ -24,6 +24,7 @@ import {
 } from "@/lib/progress";
 import { formatGregorian, toHijri } from "@/lib/hijri";
 import { useMuslimState } from "@/lib/useMuslimState";
+import { displayName, loadSettings } from "@/lib/settings";
 import { useEffect } from "react";
 
 const PRAYER_LABELS: Record<PrayerKey, string> = {
@@ -47,9 +48,11 @@ export function Dashboard() {
 
   const [location, setLocation] = useState<Location>(DEFAULT_LOCATION);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [name, setName] = useState("Musafir");
 
   useEffect(() => {
     setLocation(loadLocation());
+    setName(displayName(loadSettings()));
   }, []);
 
   const today = useMemo(() => getTodayRecord(progress), [progress]);
@@ -89,7 +92,7 @@ export function Dashboard() {
         <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-center">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neon-400">
-              Assalamu&apos;alaikum, Musafir
+              Assalamu&apos;alaikum, {name}
             </p>
             <h1 className="mt-2 font-display text-3xl font-bold leading-tight text-parchment-50 sm:text-4xl lg:text-5xl">
               Dashboard <span className="text-neon-400">Harian</span>
@@ -101,7 +104,7 @@ export function Dashboard() {
             <div className="mt-3">
               <ShareCardButton
                 data={() => ({
-                  username: "Musafir",
+                  username: name,
                   streak: progress.streak,
                   bestStreak: progress.bestStreak,
                   level,
