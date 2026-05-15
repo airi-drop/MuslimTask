@@ -213,6 +213,16 @@ type Dict = {
   "dzikir.eyebrow": string;
   "dzikir.title": string;
   "dzikir.description": string;
+
+  // Stats highlight
+  "stats.hl.noData": string;
+  "stats.hl.noDataDesc": string;
+  "stats.hl.great": string;
+  "stats.hl.greatDesc": string;
+  "stats.hl.consistentAt": string;
+  "stats.hl.improveDesc": string;
+  "stats.hl.keepGoing": string;
+  "stats.hl.keepGoingDesc": string;
 };
 
 const id: Dict = {
@@ -409,6 +419,15 @@ const id: Dict = {
   "dzikir.eyebrow": "Mihrab / Dzikir",
   "dzikir.title": "Dzikir Harian",
   "dzikir.description": "Wirid pagi, petang, dan setelah salat. Tap kartu untuk menghitung.",
+
+  "stats.hl.noData": "Mulai catat ibadahmu",
+  "stats.hl.noDataDesc": "Belum ada data 30 hari. Tandai salat di Dashboard untuk mengisi statistik.",
+  "stats.hl.great": "Performa luar biasa",
+  "stats.hl.greatDesc": "hari sempurna dalam 30 hari terakhir. Pertahankan!",
+  "stats.hl.consistentAt": "Konsisten di",
+  "stats.hl.improveDesc": "masih bisa lebih konsisten",
+  "stats.hl.keepGoing": "Terus tingkatkan",
+  "stats.hl.keepGoingDesc": "Lanjutkan rutinmu — setiap salat adalah XP.",
 };
 
 const en: Dict = {
@@ -605,6 +624,15 @@ const en: Dict = {
   "dzikir.eyebrow": "Mihrab / Dhikr",
   "dzikir.title": "Daily Dhikr",
   "dzikir.description": "Morning, evening, and after-prayer wirids. Tap a card to count.",
+
+  "stats.hl.noData": "Start tracking your worship",
+  "stats.hl.noDataDesc": "No data for 30 days yet. Mark prayers on Dashboard to fill statistics.",
+  "stats.hl.great": "Outstanding performance",
+  "stats.hl.greatDesc": "perfect days in the last 30 days. Keep it up!",
+  "stats.hl.consistentAt": "Consistent at",
+  "stats.hl.improveDesc": "could be more consistent",
+  "stats.hl.keepGoing": "Keep improving",
+  "stats.hl.keepGoingDesc": "Continue your routine — every prayer is XP.",
 };
 
 const TRANSLATIONS: Record<Language, Dict> = { id, en };
@@ -636,4 +664,78 @@ export function useT(): { t: (key: TKey) => string; lang: Language } {
     lang,
     t: (key: TKey) => translate(key, lang),
   };
+}
+
+/* ─── Dynamic translations for quest/achievement by ID ─── */
+
+type DynEntry = { title: string; description: string };
+
+const QUEST_I18N: Record<Language, Record<string, DynEntry>> = {
+  id: {
+    "salat-5": { title: "Salat 5 Waktu", description: "Selesaikan kelima salat fardhu hari ini." },
+    "dzikir-pagi": { title: "Dzikir Pagi", description: "Baca wirid pagi setelah Subuh." },
+    "dzikir-petang": { title: "Dzikir Petang", description: "Baca wirid petang sebelum Maghrib." },
+    "quran-1": { title: "Baca Al-Quran", description: "Baca minimal 1 halaman / 5 ayat hari ini." },
+    "doa-harian": { title: "Doa Harian", description: "Baca minimal 1 doa di Mihrab > Doa." },
+    "puasa-senin-kamis": { title: "Puasa Senin-Kamis", description: "Berpuasa di hari Senin atau Kamis minggu ini." },
+    "tahajud-3": { title: "Tahajud 3x", description: "Lakukan salat tahajud 3 kali minggu ini." },
+    "al-kahfi-jumat": { title: "Al-Kahfi di Jumat", description: "Baca surah Al-Kahfi pada hari Jumat." },
+    "sedekah-1": { title: "Sedekah", description: "Bersedekah minimal 1 kali minggu ini." },
+    "dhuha-3": { title: "Salat Dhuha 3x", description: "Lakukan salat dhuha 3 kali minggu ini." },
+  },
+  en: {
+    "salat-5": { title: "5 Daily Prayers", description: "Complete all five obligatory prayers today." },
+    "dzikir-pagi": { title: "Morning Dhikr", description: "Read morning wirds after Fajr." },
+    "dzikir-petang": { title: "Evening Dhikr", description: "Read evening wirds before Maghrib." },
+    "quran-1": { title: "Read Al-Quran", description: "Read at least 1 page / 5 verses today." },
+    "doa-harian": { title: "Daily Prayer", description: "Read at least 1 dua in Mihrab > Prayers." },
+    "puasa-senin-kamis": { title: "Mon-Thu Fasting", description: "Fast on Monday or Thursday this week." },
+    "tahajud-3": { title: "Tahajud 3x", description: "Perform tahajud prayer 3 times this week." },
+    "al-kahfi-jumat": { title: "Al-Kahfi on Friday", description: "Read surah Al-Kahfi on Friday." },
+    "sedekah-1": { title: "Charity", description: "Give charity at least once this week." },
+    "dhuha-3": { title: "Dhuha Prayer 3x", description: "Perform dhuha prayer 3 times this week." },
+  },
+};
+
+const ACHIEVEMENT_I18N: Record<Language, Record<string, DynEntry>> = {
+  id: {
+    "first-step": { title: "Langkah Pertama", description: "Tandai 1 salat di Dashboard." },
+    "perfect-day": { title: "Hari Sempurna", description: "Selesaikan 5 salat dalam 1 hari." },
+    "perfect-week": { title: "Pekan Sempurna", description: "7 hari sempurna kumulatif." },
+    "subuh-warrior": { title: "Subuh Warrior", description: "Salat Subuh 7 hari berturut-turut." },
+    "streak-7": { title: "Streak 7 Hari", description: "Pertahankan streak 7 hari." },
+    "streak-30": { title: "Streak 30 Hari", description: "Pertahankan streak 30 hari." },
+    "streak-100": { title: "Streak 100 Hari", description: "Pertahankan streak 100 hari." },
+    "xp-500": { title: "Pengumpul XP", description: "Kumpulkan 500 XP total." },
+    "xp-1000": { title: "Penjelajah Spiritual", description: "Kumpulkan 1.000 XP total." },
+    "quran-reader": { title: "Pembaca Al-Quran", description: "Baca Al-Quran 7 hari berturut-turut." },
+    "dzikir-pagi-streak": { title: "Pagi Berkah", description: "Dzikir pagi 7 hari berturut-turut." },
+    "dzikir-petang-streak": { title: "Petang Berkah", description: "Dzikir petang 7 hari berturut-turut." },
+    "dzikir-pagi-30": { title: "Wirid Subuh", description: "Dzikir pagi 30 hari berturut-turut." },
+  },
+  en: {
+    "first-step": { title: "First Step", description: "Mark 1 prayer on Dashboard." },
+    "perfect-day": { title: "Perfect Day", description: "Complete 5 prayers in 1 day." },
+    "perfect-week": { title: "Perfect Week", description: "7 cumulative perfect days." },
+    "subuh-warrior": { title: "Fajr Warrior", description: "Pray Fajr 7 days in a row." },
+    "streak-7": { title: "7-Day Streak", description: "Maintain a 7-day streak." },
+    "streak-30": { title: "30-Day Streak", description: "Maintain a 30-day streak." },
+    "streak-100": { title: "100-Day Streak", description: "Maintain a 100-day streak." },
+    "xp-500": { title: "XP Collector", description: "Collect 500 total XP." },
+    "xp-1000": { title: "Spiritual Explorer", description: "Collect 1,000 total XP." },
+    "quran-reader": { title: "Quran Reader", description: "Read Al-Quran 7 days in a row." },
+    "dzikir-pagi-streak": { title: "Blessed Morning", description: "Morning dhikr 7 days in a row." },
+    "dzikir-petang-streak": { title: "Blessed Evening", description: "Evening dhikr 7 days in a row." },
+    "dzikir-pagi-30": { title: "Dawn Wird", description: "Morning dhikr 30 days in a row." },
+  },
+};
+
+/** Get translated quest title+description by quest ID. Falls back to original. */
+export function tQuest(id: string, lang: Language): DynEntry | null {
+  return QUEST_I18N[lang]?.[id] ?? QUEST_I18N.id[id] ?? null;
+}
+
+/** Get translated achievement title+description by achievement ID. */
+export function tAchievement(id: string, lang: Language): DynEntry | null {
+  return ACHIEVEMENT_I18N[lang]?.[id] ?? ACHIEVEMENT_I18N.id[id] ?? null;
 }

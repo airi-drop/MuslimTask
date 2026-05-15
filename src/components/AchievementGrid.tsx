@@ -3,7 +3,7 @@
 import { PageHeader } from "@/components/PageHeader";
 import { evaluateAll, type Achievement } from "@/lib/achievements";
 import { useMuslimState } from "@/lib/useMuslimState";
-import { useT, type TKey } from "@/lib/i18n";
+import { useT, type TKey, tAchievement } from "@/lib/i18n";
 
 const CATEGORY_KEY: Record<Achievement["category"], TKey> = {
   streak: "achievement.cat.streak",
@@ -14,7 +14,7 @@ const CATEGORY_KEY: Record<Achievement["category"], TKey> = {
 };
 
 export function AchievementGrid() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const { progress, quests, hydrated, claimAchievement } = useMuslimState();
   const evaluated = evaluateAll(progress, quests);
   const unlocked = evaluated.filter((a) => a.unlocked).length;
@@ -76,6 +76,7 @@ export function AchievementGrid() {
             const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
             const isClaimed = seenSet.has(def.id);
             const canClaim = isUnlocked && !isClaimed;
+            const ai = tAchievement(def.id, lang);
 
             return (
               <article
@@ -101,14 +102,14 @@ export function AchievementGrid() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                       <h3 className="truncate font-display text-base font-bold text-emerald-800 dark:text-parchment-50">
-                        {def.name}
+                        {ai?.title ?? def.name}
                       </h3>
                       <span className="shrink-0 rounded-full bg-parchment-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80 dark:bg-space-800 dark:text-parchment-100/70">
                         {t(CATEGORY_KEY[def.category])}
                       </span>
                     </div>
                     <p className="mt-1 break-words text-sm text-emerald-700/80 dark:text-parchment-100/70">
-                      {def.description}
+                      {ai?.description ?? def.description}
                     </p>
                     <div className="mt-3">
                       <div className="h-1.5 w-full rounded-full bg-emerald-100 dark:bg-space-800">

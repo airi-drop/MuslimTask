@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AchievementToast } from "@/components/AchievementToast";
 import { PageHeader } from "@/components/PageHeader";
-import { useT, type TKey } from "@/lib/i18n";
+import { useT, type TKey, tQuest } from "@/lib/i18n";
 import {
   DAILY_QUESTS,
   WEEKLY_QUESTS,
@@ -28,7 +28,7 @@ type Tab = "daily" | "weekly";
 const SYNCED_QUEST_IDS = new Set(["salat-5"]);
 
 export function QuestBoard() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const {
     hydrated,
     progress,
@@ -172,6 +172,7 @@ export function QuestBoard() {
               onIncrement={() => increment(q)}
               onReset={() => reset(q)}
               t={t}
+              lang={lang}
             />
           );
         })}
@@ -247,6 +248,7 @@ function QuestRow({
   onReset,
   disabled,
   t,
+  lang,
 }: {
   def: QuestDef;
   state: QuestState;
@@ -256,9 +258,11 @@ function QuestRow({
   onReset: () => void;
   disabled?: boolean;
   t: (key: TKey) => string;
+  lang: import("@/lib/settings").Language;
 }) {
   const pct = Math.round((state.count / def.target) * 100);
   const Icon = ICONS[def.category];
+  const qi = tQuest(def.id, lang);
   return (
     <article
       className={`card relative min-w-0 overflow-hidden p-4 transition sm:p-5 ${
@@ -279,7 +283,7 @@ function QuestRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <h3 className="truncate font-display text-base font-bold text-emerald-800 dark:text-parchment-50 sm:text-lg">
-              {def.title}
+              {qi?.title ?? def.title}
             </h3>
             {!synced && (
               <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-300">
@@ -312,7 +316,7 @@ function QuestRow({
           <p className="mt-1 break-words text-sm text-emerald-700/80 dark:text-parchment-100/70">
             {synced
               ? t("quest.syncDesc")
-              : def.description}
+              : (qi?.description ?? def.description)}
           </p>
           {win && !state.done && !win.active && (
             <p className="mt-1 break-words text-[11px] text-emerald-700/60 dark:text-parchment-100/50">

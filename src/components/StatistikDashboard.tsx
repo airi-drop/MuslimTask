@@ -11,6 +11,7 @@ import {
   intensity,
   pickHighlight,
   type DailyBar,
+  type StatsSummary,
 } from "@/lib/stats";
 import { useMuslimState } from "@/lib/useMuslimState";
 import { TARGET_PRAYERS_PER_DAY, type PrayerKey } from "@/lib/progress";
@@ -22,7 +23,24 @@ export function StatistikDashboard() {
   const week = useMemo(() => getWeekBars(progress), [progress]);
   const heatmap = useMemo(() => getRecentDays(progress, 30), [progress]);
   const summary = useMemo(() => buildSummary(progress), [progress]);
-  const highlight = useMemo(() => pickHighlight(summary), [summary]);
+
+  // Translated highlight
+  const highlight = useMemo(() => {
+    if (summary.totalPrayers30d === 0) {
+      return { title: t("stats.hl.noData"), description: t("stats.hl.noDataDesc") };
+    }
+    if (summary.perfectDays30d >= 7) {
+      return { title: t("stats.hl.great"), description: `${summary.perfectDays30d} ${t("stats.hl.greatDesc")}` };
+    }
+    if (summary.bestPrayer && summary.worstPrayer && summary.bestPrayer.pct > 0) {
+      return {
+        title: `${t("stats.hl.consistentAt")} ${PRAYER_LABEL[summary.bestPrayer.key]}`,
+        description: `${PRAYER_LABEL[summary.worstPrayer.key]} ${t("stats.hl.improveDesc")} (${summary.worstPrayer.pct}%).`,
+      };
+    }
+    return { title: t("stats.hl.keepGoing"), description: t("stats.hl.keepGoingDesc") };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [summary, t]);
 
   // Best day of the week
   const weekTotal = week.reduce((acc, d) => acc + d.prayedCount, 0);
