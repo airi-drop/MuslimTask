@@ -1,6 +1,6 @@
 import type { Progress } from "./progress";
 import { TARGET_PRAYERS_PER_DAY, todayKey } from "./progress";
-import type { QuestStore } from "./quests";
+import { consecutiveDayStreak, type QuestStore } from "./quests";
 
 export type AchievementCategory = "streak" | "salat" | "quran" | "mihrab" | "xp";
 
@@ -57,15 +57,12 @@ function questCompletedToday(q: QuestStore, id: string): number {
   return s && s.done ? 1 : 0;
 }
 
-function quranReadDayStreak(p: Progress, q: QuestStore, now: Date): number {
-  // Counts how many consecutive days "quran-1" daily quest was done.
-  // We only have the *current* state in QuestStore (no per-day history for
-  // quests yet), so we can only guarantee a streak of 0 or 1 from quests
-  // alone. Fallback: if today's quest is done, return 1 — full multi-day
-  // tracking will be added when quest-history is implemented.
-  void p;
-  void now;
-  return q.daily["quran-1"]?.done ? 1 : 0;
+function questDayStreak(q: QuestStore, id: string, now: Date): number {
+  return consecutiveDayStreak(q.completionHistory?.[id] ?? [], now);
+}
+
+function quranReadDayStreak(_p: Progress, q: QuestStore, now: Date): number {
+  return questDayStreak(q, "quran-1", now);
 }
 
 /* ---------- Catalog ---------- */
@@ -162,21 +159,31 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: "dzikir-pagi-streak",
     name: "Pagi Berkah",
-    description: "Dzikir pagi minggu ini.",
+    description: "Dzikir pagi 7 hari berturut-turut.",
     category: "mihrab",
-    evaluate: (_p, q) => ({
-      current: questCompletedToday(q, "dzikir-pagi"),
-      target: 1,
+    evaluate: (_p, q, now = new Date()) => ({
+      current: Math.min(questDayStreak(q, "dzikir-pagi", now), 7),
+      target: 7,
     }),
   },
   {
     id: "dzikir-petang-streak",
     name: "Petang Berkah",
-    description: "Dzikir petang minggu ini.",
+    description: "Dzikir petang 7 hari berturut-turut.",
     category: "mihrab",
-    evaluate: (_p, q) => ({
-      current: questCompletedToday(q, "dzikir-petang"),
-      target: 1,
+    evaluate: (_p, q, now = new Date()) => ({
+      current: Math.min(questDayStreak(q, "dzikir-petang", now), 7),
+      target: 7,
+    }),
+  },
+  {
+    id: "dzikir-pagi-30",
+    name: "Wirid Subuh",
+    description: "Dzikir pagi 30 hari berturut-turut.",
+    category: "mihrab",
+    evaluate: (_p, q, now = new Date()) => ({
+      current: Math.min(questDayStreak(q, "dzikir-pagi", now), 30),
+      target: 30,
     }),
   },
 ];

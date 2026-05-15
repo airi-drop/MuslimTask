@@ -51,6 +51,7 @@ export function useMuslimState(): MuslimState {
   const [quests, setQuestsState] = useState<QuestStore>({
     daily: {},
     weekly: {},
+    completionHistory: {},
   });
   const [unlockedNow, setUnlockedNow] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);

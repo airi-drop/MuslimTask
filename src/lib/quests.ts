@@ -31,6 +31,12 @@ export type QuestState = {
 export type QuestStore = {
   daily: Record<string, QuestState>;
   weekly: Record<string, QuestState>;
+  /**
+   * Per-quest completion history: questId -> sorted list of YYYY-MM-DD dates
+   * where the quest was completed. Used by achievements engine for real
+   * consecutive-day streak detection.
+   */
+  completionHistory: Record<string, string[]>;
 };
 
 /* ---------- Quest catalog ---------- */
@@ -147,10 +153,16 @@ export function weekKey(d: Date = new Date()): string {
 
 /* ---------- Store helpers ---------- */
 
-const EMPTY_STORE: QuestStore = { daily: {}, weekly: {} };
+const EMPTY_STORE: QuestStore = { daily: {}, weekly: {}, completionHistory: {} };
 
 export function loadQuests(): QuestStore {
-  return readJSON<QuestStore>(STORAGE_KEYS.quests, EMPTY_STORE);
+  const raw = readJSON<Partial<QuestStore>>(STORAGE_KEYS.quests, {});
+  // Migrate older shapes (no completionHistory)
+  return {
+    daily: raw.daily ?? {},
+    weekly: raw.weekly ?? {},
+    completionHistory: raw.completionHistory ?? {},
+  };
 }
 
 export function saveQuests(s: QuestStore): void {
@@ -172,10 +184,66 @@ export function applyQuestState(
   store: QuestStore,
   def: QuestDef,
   next: QuestState,
+  now: Date = new Date(),
 ): QuestStore {
   const bucket = def.kind === "daily" ? "daily" : "weekly";
+  const previous = store[bucket][def.id];
+  const wasDone = previous?.done === true;
+  const isDone = next.done === true;
+  const today = todayKey(now);
+
+  // Maintain completionHistory: append today on first transition to done,
+  // remove today on transition to not-done (so cancel rolls back the streak).
+  const historyForId = store.completionHistory[def.id] ?? [];
+  let nextHistory = historyForId;
+
+  if (isDone && !wasDone && !historyForId.includes(today)) {
+    nextHistory = [...historyForId, today].sort();
+  } else if (!isDone && wasDone && historyForId.includes(today)) {
+    nextHistory = historyForId.filter((d) => d !== today);
+  }
+
   return {
     ...store,
     [bucket]: { ...store[bucket], [def.id]: next },
+    completionHistory:
+      nextHistory === historyForId
+        ? store.completionHistory
+        : { ...store.completionHistory, [def.id]: nextHistory },
   };
+}
+
+/**
+ * Compute the trailing consecutive-day streak for a quest's completion history.
+ * Counts back from today (or from the most recent completion if today isn't
+ * yet completed — so a streak in progress isn't broken until midnight).
+ */
+export function consecutiveDayStreak(
+  history: string[],
+  now: Date = new Date(),
+): number {
+  if (!history || history.length === 0) return 0;
+  const set = new Set(history);
+  const todayK = todayKey(now);
+
+  let cursor = new Date(now);
+  cursor.setHours(0, 0, 0, 0);
+
+  // If today isn't in history, start from yesterday so an in-progress day
+  // doesn't break the trailing streak.
+  if (!set.has(todayK)) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  let streak = 0;
+  for (let i = 0; i < 1000; i++) {
+    const k = todayKey(cursor);
+    if (set.has(k)) {
+      streak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
 }
