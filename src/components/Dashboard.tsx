@@ -154,8 +154,9 @@ export function Dashboard() {
               streak={progress.streak}
               bestStreak={progress.bestStreak}
               lives={progress.lives}
+              t={t}
             />
-            <RiskWarning prayedCount={prayedCount} lives={progress.lives} />
+            <RiskWarning prayedCount={prayedCount} lives={progress.lives} t={t} />
           </div>
         </div>
       </section>
@@ -292,6 +293,7 @@ export function Dashboard() {
           lives={progress.lives}
           streak={progress.streak}
           livesSpentOn={progress.livesSpentOn}
+          t={t}
         />
       </section>
 
@@ -311,10 +313,12 @@ function StreakHero({
   streak,
   bestStreak,
   lives,
+  t,
 }: {
   streak: number;
   bestStreak: number;
   lives: number;
+  t: (key: import("@/lib/i18n").TKey) => string;
 }) {
   const intoCycle = streak === 0 ? 0 : streak % 7;
   const toNextLife = streak === 0 ? 7 : 7 - intoCycle;
@@ -328,16 +332,16 @@ function StreakHero({
       <div className="flex items-baseline justify-between gap-3">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-parchment-100/60">
-            Streak Berjalan
+            {t("dashboard.streakRunning")}
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-glow-amber font-display text-5xl font-bold leading-none sm:text-6xl">
               {streak}
             </span>
-            <span className="text-sm text-parchment-100/60">hari</span>
+            <span className="text-sm text-parchment-100/60">{t("common.days").toLowerCase()}</span>
           </div>
           <div className="mt-1 text-[11px] text-parchment-100/60">
-            Terbaik: {bestStreak} hari
+            {t("dashboard.bestStreak")}: {bestStreak} {t("common.days").toLowerCase()}
           </div>
         </div>
         <FlameIcon className="h-10 w-10 text-amber-300/80 sm:h-12 sm:w-12" />
@@ -346,7 +350,7 @@ function StreakHero({
       {/* Lives row */}
       <div className="mt-4 flex items-center justify-between gap-2">
         <div className="text-[11px] font-semibold uppercase tracking-widest text-parchment-100/70">
-          Nyawa Streak
+          {t("dashboard.lives")}
         </div>
         <div className="flex items-center gap-1.5">
           {Array.from({ length: livesCap }).map((_, i) => {
@@ -354,11 +358,6 @@ function StreakHero({
             return (
               <span
                 key={i}
-                title={
-                  active
-                    ? "Nyawa aktif — siap melindungi streak"
-                    : "Slot kosong"
-                }
                 className={`relative h-6 w-6 transition ${
                   active ? "scale-100" : "scale-90 opacity-40"
                 }`}
@@ -391,8 +390,8 @@ function StreakHero({
         </div>
         <p className="mt-1.5 truncate text-[11px] text-parchment-100/60">
           {livesFull
-            ? "Nyawa penuh. Tetap konsisten!"
-            : `${toNextLife} hari lagi → +1 nyawa`}
+            ? t("dashboard.livesFull")
+            : `${toNextLife} ${t("dashboard.livesNext")}`}
         </p>
       </div>
     </div>
@@ -402,11 +401,12 @@ function StreakHero({
 function RiskWarning({
   prayedCount,
   lives,
+  t,
 }: {
   prayedCount: number;
   lives: number;
+  t: (key: import("@/lib/i18n").TKey) => string;
 }) {
-  // Show warning if it's evening (>= 18:00) and no prayers marked yet today.
   const [show, setShow] = useState(false);
   useEffect(() => {
     const check = () => {
@@ -428,12 +428,12 @@ function RiskWarning({
         </div>
         <div className="min-w-0">
           <div className="text-[11px] font-bold uppercase tracking-widest text-amber-300">
-            Streak Terancam
+            {t("dashboard.streakAtRisk")}
           </div>
           <p className="mt-0.5 text-xs text-parchment-100/80">
             {lives > 0
-              ? `Belum ada salat tercatat. Kalau hari ini terlewat, 1 nyawa akan terpakai (sisa: ${lives - 1}).`
-              : "Belum ada salat tercatat dan nyawa habis. Tandai sebelum tengah malam supaya streak gak putus."}
+              ? t("dashboard.streakWarn")
+              : t("dashboard.streakWarnNoLives")}
           </p>
         </div>
       </div>
@@ -448,10 +448,12 @@ function StreakProtectionInner({
   lives,
   streak,
   livesSpentOn,
+  t,
 }: {
   lives: number;
   streak: number;
   livesSpentOn: string[];
+  t: (key: import("@/lib/i18n").TKey) => string;
 }) {
   const intoCycle = streak === 0 ? 0 : streak % 7;
   const toNextLife = streak === 0 ? 7 : 7 - intoCycle;
@@ -465,39 +467,29 @@ function StreakProtectionInner({
         </div>
         <div className="min-w-0">
           <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600/70 dark:text-neon-500/70">
-            Streak Protection
+            {t("dashboard.protectionTitle")}
           </div>
           <h3 className="font-display text-xl font-bold text-emerald-800 dark:text-parchment-50 sm:text-2xl">
-            Cara Kerja Nyawa
+            {t("dashboard.protectionHow")}
           </h3>
           <ul className="mt-2 space-y-1 text-sm text-emerald-700/80 dark:text-parchment-100/70">
             <li className="flex items-start gap-2">
               <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
-              <span>
-                Setiap <strong>7 hari streak</strong> → kamu dapat{" "}
-                <strong>+1 nyawa</strong> (maksimal 3).
-              </span>
+              <span>{t("dashboard.protectionR1")}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
-              <span>
-                Kalau lewatkan 1 hari penuh, <strong>1 nyawa terpakai</strong>{" "}
-                otomatis untuk menjaga streak.
-              </span>
+              <span>{t("dashboard.protectionR2")}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
-              <span>
-                Nyawa habis + lewat hari → streak putus dan harus mulai lagi
-                dari 0.
-              </span>
+              <span>{t("dashboard.protectionR3")}</span>
             </li>
           </ul>
 
           {usedCount > 0 && (
             <p className="mt-3 text-xs text-emerald-700/70 dark:text-parchment-100/60">
-              <strong>{usedCount}x</strong> nyawa telah menyelamatkan streak-mu
-              sejauh ini.
+              <strong>{usedCount}</strong> {t("dashboard.protectionUsed")}
             </p>
           )}
         </div>
@@ -505,7 +497,7 @@ function StreakProtectionInner({
 
       <div className="rounded-2xl border border-emerald-100 bg-parchment-50 p-4 dark:border-emerald-900/60 dark:bg-space-900/60 lg:min-w-[200px]">
         <div className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700/70 dark:text-parchment-100/60">
-          Nyawa Aktif
+          {t("dashboard.activeLives")}
         </div>
         <div className="mt-1 flex items-center gap-1.5">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -522,8 +514,8 @@ function StreakProtectionInner({
         </div>
         <div className="mt-2 text-[11px] text-emerald-700/70 dark:text-parchment-100/60">
           {lives >= 3
-            ? "Nyawa penuh!"
-            : `+1 nyawa dalam ${toNextLife} hari`}
+            ? t("dashboard.livesFull")
+            : `+1 ${t("dashboard.livesNext").replace(/\d+\s*/, `${toNextLife} `)}`}
         </div>
       </div>
     </div>

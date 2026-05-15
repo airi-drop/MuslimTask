@@ -11,6 +11,7 @@ import {
 } from "@/lib/prayer";
 import { formatGregorian, toHijri } from "@/lib/hijri";
 import type { Location } from "@/lib/location";
+import { useT } from "@/lib/i18n";
 
 type Props = {
   location: Location;
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export function NextPrayerCard({ location, onChangeLocation }: Props) {
+  const { t } = useT();
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -49,50 +51,44 @@ export function NextPrayerCard({ location, onChangeLocation }: Props) {
   const hijri = toHijri(now).formatted;
   const localTime = formatTime(now, location.timezone);
 
+  // Translate prayer name
+  const prayerNameKey = `prayer.${next.key}` as import("@/lib/i18n").TKey;
+  const prayerName = t(prayerNameKey);
+
   return (
     <section className="card-feature relative h-full overflow-hidden p-5 sm:p-6">
-      {/* Decorative crescent & glow */}
       <div className="pointer-events-none absolute -right-8 -top-8 h-44 w-44 rounded-full bg-amber-400/10 blur-3xl" />
       <CrescentDecoration className="pointer-events-none absolute right-3 top-3 h-16 w-16 text-amber-300/80 sm:h-20 sm:w-20" />
 
       <div className="relative">
         <div className="text-xs font-semibold uppercase tracking-[0.2em] text-neon-400">
-          Shalat Berikutnya
+          {t("prayer.next")}
         </div>
         <h2 className="mt-1 font-display text-4xl font-bold leading-tight text-parchment-50 sm:text-5xl">
-          {next.name}
+          {prayerName}
         </h2>
 
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
           <span className="text-parchment-100/80">{greg}</span>
-          <span
-            className="rounded-full bg-emerald-950/50 px-2.5 py-0.5 text-xs text-parchment-100/90 ring-1 ring-emerald-800/50"
-            title="Hijriah dihitung dengan kalender Umm Al-Qura (hisab). Bisa berbeda 1 hari dari rukyat resmi Kemenag."
-          >
+          <span className="rounded-full bg-emerald-950/50 px-2.5 py-0.5 text-xs text-parchment-100/90 ring-1 ring-emerald-800/50">
             {hijri}
           </span>
         </div>
         <div className="mt-1 truncate text-sm text-parchment-100/70">
           {location.city}, {location.region}
         </div>
-        {location.city === "Lokasi GPS" && (
-          <p className="mt-1 text-[11px] text-amber-300/90">
-            Nama lokasi belum bisa diambil — koneksi internet diperlukan untuk
-            reverse geocoding. Jadwal salat tetap akurat dari koordinat GPS.
-          </p>
-        )}
 
         <button
           onClick={onChangeLocation}
           className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full bg-emerald-950/50 px-4 py-2 text-sm font-medium text-parchment-50 ring-1 ring-emerald-800/60 transition hover:bg-emerald-900 hover:ring-neon-500/40"
         >
           <PinIcon className="h-4 w-4 shrink-0" />
-          <span className="truncate">Ganti Lokasi</span>
+          <span className="truncate">{t("prayer.changeLocation")}</span>
         </button>
 
         <div className="mt-5">
           <div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-parchment-100/60">
-            Waktu menuju {next.name.toLowerCase()}
+            {t("prayer.next")} — {prayerName}
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-glow-amber font-display text-3xl font-bold tabular-nums sm:text-4xl">
@@ -107,7 +103,7 @@ export function NextPrayerCard({ location, onChangeLocation }: Props) {
         <div className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
           <div className="rounded-2xl bg-emerald-950/40 p-3 ring-1 ring-emerald-800/50 sm:p-4">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-parchment-100/60">
-              Waktu
+              {t("common.day") === "Day" ? "Time" : "Waktu"}
             </div>
             <div className="mt-1 font-display text-xl font-bold tabular-nums sm:text-2xl">
               {localTime}
@@ -119,28 +115,31 @@ export function NextPrayerCard({ location, onChangeLocation }: Props) {
             </div>
             <div className="mt-1 flex items-center gap-2 font-display text-xl font-bold sm:text-2xl">
               <span className="h-2 w-2 rounded-full bg-neon-400 animate-glow" />
-              <span className="truncate">Berjalan</span>
+              <span className="truncate">{t("common.day") === "Day" ? "Running" : "Berjalan"}</span>
             </div>
           </div>
         </div>
 
         {/* Today's schedule — chips */}
         <div className="mt-4 grid grid-cols-3 gap-1.5 sm:grid-cols-6">
-          {todaySlots.map((s) => (
-            <div
-              key={s.key}
-              className={`min-w-0 rounded-xl px-1.5 py-2 text-center text-[11px] ring-1 transition ${
-                s.key === next.key
-                  ? "bg-amber-400/15 text-amber-300 ring-amber-400/30"
-                  : "bg-emerald-950/30 text-parchment-100/80 ring-emerald-800/40"
-              }`}
-            >
-              <div className="truncate font-semibold">{s.name}</div>
-              <div className="truncate font-mono">
-                {formatTime(s.time, location.timezone)}
+          {todaySlots.map((s) => {
+            const slotKey = `prayer.${s.key}` as import("@/lib/i18n").TKey;
+            return (
+              <div
+                key={s.key}
+                className={`min-w-0 rounded-xl px-1.5 py-2 text-center text-[11px] ring-1 transition ${
+                  s.key === next.key
+                    ? "bg-amber-400/15 text-amber-300 ring-amber-400/30"
+                    : "bg-emerald-950/30 text-parchment-100/80 ring-emerald-800/40"
+                }`}
+              >
+                <div className="truncate font-semibold">{t(slotKey)}</div>
+                <div className="truncate font-mono">
+                  {formatTime(s.time, location.timezone)}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
