@@ -91,6 +91,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Cache audio from cdn.equran.id with cacheFirst (audio is static).
+  if (url.host === "cdn.equran.id") {
+    event.respondWith(cacheFirst(req, CACHE_STATIC));
+    return;
+  }
+
   if (url.origin !== self.location.origin) return; // skip other cross-origin
 
   // Don't cache the manifest (let it always be fresh) or RSC payloads

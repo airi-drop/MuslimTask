@@ -22,6 +22,8 @@ import {
   WEEKLY_QUESTS,
 } from "@/lib/quests";
 import { useMuslimState } from "@/lib/useMuslimState";
+import { AudioPlayer } from "@/components/AudioPlayer";
+import { QARI_KEY, loadSettings } from "@/lib/settings";
 
 const QURAN_QUEST_DEF = DAILY_QUESTS.find((q) => q.id === "quran-1")!;
 const KAHFI_QUEST_DEF = WEEKLY_QUESTS.find((q) => q.id === "al-kahfi-jumat")!;
@@ -195,6 +197,11 @@ export function SurahReader({ meta }: Props) {
           </p>
         </div>
       )}
+
+      {/* Audio player */}
+      <AudioPlayer
+        audioUrl={detail?.audioFull?.[QARI_KEY[loadSettings().qari]]}
+      />
 
       {/* Reader controls */}
       <section className="card flex flex-wrap items-center gap-2 p-3 sm:p-4">
