@@ -139,6 +139,10 @@ export function flatBookmarks(): { surah: SurahMeta; ayat: number }[] {
   return out;
 }
 
+export function clearAllBookmarks(): void {
+  writeJSON(BOOKMARK_KEY, {});
+}
+
 /* ---------- Last read ---------- */
 
 export function loadLastRead(): LastRead | null {

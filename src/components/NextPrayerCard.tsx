@@ -65,13 +65,22 @@ export function NextPrayerCard({ location, onChangeLocation }: Props) {
 
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
           <span className="text-parchment-100/80">{greg}</span>
-          <span className="rounded-full bg-emerald-950/50 px-2.5 py-0.5 text-xs text-parchment-100/90 ring-1 ring-emerald-800/50">
+          <span
+            className="rounded-full bg-emerald-950/50 px-2.5 py-0.5 text-xs text-parchment-100/90 ring-1 ring-emerald-800/50"
+            title="Hijriah dihitung dengan kalender Umm Al-Qura (hisab). Bisa berbeda 1 hari dari rukyat resmi Kemenag."
+          >
             {hijri}
           </span>
         </div>
         <div className="mt-1 truncate text-sm text-parchment-100/70">
           {location.city}, {location.region}
         </div>
+        {location.city === "Lokasi GPS" && (
+          <p className="mt-1 text-[11px] text-amber-300/90">
+            Nama lokasi belum bisa diambil — koneksi internet diperlukan untuk
+            reverse geocoding. Jadwal salat tetap akurat dari koordinat GPS.
+          </p>
+        )}
 
         <button
           onClick={onChangeLocation}

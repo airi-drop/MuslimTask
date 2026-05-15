@@ -136,11 +136,29 @@ export function intensity(prayedCount: number): 0 | 1 | 2 | 3 | 4 {
 
 /* ---------- Summary ---------- */
 
+/** Find the earliest YYYY-MM-DD in history. Returns null if empty. */
+function firstRecordedDay(progress: Progress): string | null {
+  const keys = Object.keys(progress.history);
+  if (keys.length === 0) return null;
+  let min = keys[0];
+  for (const k of keys) {
+    if (k < min) min = k;
+  }
+  return min;
+}
+
 export function buildSummary(
   progress: Progress,
   now: Date = new Date(),
 ): StatsSummary {
-  const days = getRecentDays(progress, 30, now);
+  const allDays = getRecentDays(progress, 30, now);
+  const firstDay = firstRecordedDay(progress);
+  // Only count days from firstRecordedDay onwards. Days before user started
+  // tracking shouldn't count as "incomplete".
+  const days = firstDay
+    ? allDays.filter((d) => d.dateKey >= firstDay)
+    : allDays;
+
   let totalPrayers = 0;
   let xp = 0;
   let perfect = 0;
@@ -168,13 +186,14 @@ export function buildSummary(
     }
   }
 
+  const denom = days.length || 1;
   const target = days.length * TARGET_PRAYERS_PER_DAY;
   const perPrayerPct: Record<PrayerKey, number> = {
-    fajr: pct(perPrayerCount.fajr, days.length),
-    dhuhr: pct(perPrayerCount.dhuhr, days.length),
-    asr: pct(perPrayerCount.asr, days.length),
-    maghrib: pct(perPrayerCount.maghrib, days.length),
-    isha: pct(perPrayerCount.isha, days.length),
+    fajr: pct(perPrayerCount.fajr, denom),
+    dhuhr: pct(perPrayerCount.dhuhr, denom),
+    asr: pct(perPrayerCount.asr, denom),
+    maghrib: pct(perPrayerCount.maghrib, denom),
+    isha: pct(perPrayerCount.isha, denom),
   };
 
   const sortedByPct = (Object.keys(perPrayerPct) as PrayerKey[]).sort(
