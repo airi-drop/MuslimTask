@@ -56,7 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen font-sans">
         <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5 sm:py-5 lg:px-8">
           <Navbar />
-          <main className="mt-4 sm:mt-5">{children}</main>
+          <main className="mt-4 pb-24 sm:mt-5 sm:pb-0">{children}</main>
         </div>
         <PWARegister />
         <InstallPrompt />
