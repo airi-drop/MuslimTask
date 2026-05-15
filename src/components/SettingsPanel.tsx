@@ -163,7 +163,7 @@ export function SettingsPanel() {
       >
         <Toggle
           label="Pengingat waktu salat"
-          desc="Tampilkan notifikasi saat masuk waktu salat (hanya saat aplikasi terbuka)."
+          desc="Tampilkan notifikasi browser saat masuk waktu salat (hanya saat tab terbuka)."
           checked={s.notifications}
           onChange={(v) => update("notifications", v)}
           disabled={!hydrated}

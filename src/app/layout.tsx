@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { themeBootScript } from "@/components/ThemeToggle";
 import { PWARegister } from "@/components/PWARegister";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { PrayerNotifier } from "@/components/PrayerNotifier";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const display = Space_Grotesk({
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         <PWARegister />
         <InstallPrompt />
+        <PrayerNotifier />
       </body>
     </html>
   );
