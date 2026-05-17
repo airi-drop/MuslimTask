@@ -1,15 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Cinzel, DM_Sans, Amiri } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/Navbar";
-import { themeBootScript } from "@/components/ThemeToggle";
+import BottomNav from "@/components/layout/BottomNav";
 import { ThemeBoot } from "@/components/ThemeBoot";
 import { PWARegister } from "@/components/PWARegister";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import { PrayerNotifier } from "@/components/PrayerNotifier";
+import { OnboardingGate } from "@/components/OnboardingGate";
 
-// PRD §1.2 — Cormorant Garamond drives `font-display` (numbers, prayer
-// names, large headings, rank names).
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -18,8 +15,6 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
-// PRD §1.2 — Cinzel drives `font-ornament` (UPPERCASE section labels,
-// nav labels, badge text).
 const cinzel = Cinzel({
   subsets: ["latin"],
   weight: ["400", "500"],
@@ -27,8 +22,6 @@ const cinzel = Cinzel({
   display: "swap",
 });
 
-// PRD §1.2 — DM Sans drives `font-ui` AND the default `font-sans` (body
-// text, descriptions, time, XP values).
 const dmSans = DM_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
@@ -36,8 +29,6 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
-// Arabic-script font for Quran ayat, dzikir text, and `.arabic` class.
-// Retained from the previous build; not part of the PRD §1.2 swap.
 const amiri = Amiri({
   subsets: ["arabic"],
   variable: "--font-arabic",
@@ -60,13 +51,29 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F4EFDE" },
-    { media: "(prefers-color-scheme: dark)", color: "#070F18" },
+    { media: "(prefers-color-scheme: light)", color: "#F5F2EC" },
+    { media: "(prefers-color-scheme: dark)", color: "#050E08" },
   ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
+
+// Inline theme boot script — runs before React hydrates to prevent FOUC
+const themeBootScript = `
+(function(){
+  try {
+    var t = localStorage.getItem("mihrab-theme") || localStorage.getItem("mt:theme");
+    if (t !== "dark" && t !== "light") t = "dark";
+    var root = document.documentElement;
+    root.setAttribute("data-theme", t);
+    if (t === "dark") root.classList.add("dark");
+  } catch(e){
+    document.documentElement.setAttribute("data-theme", "dark");
+    document.documentElement.classList.add("dark");
+  }
+})();
+`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -78,15 +85,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
-      <body className="min-h-screen font-sans">
+      <body className="font-ui bg-bg-deepest text-text-primary min-h-dvh">
         <ThemeBoot />
-        <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5 sm:py-5 lg:px-8">
-          <Navbar />
-          <main className="mt-4 pb-24 sm:mt-5 sm:pb-0">{children}</main>
+        <OnboardingGate />
+        <div className="max-w-[430px] mx-auto min-h-dvh flex flex-col relative">
+          <main className="flex-1 overflow-y-auto pb-[72px] pt-safe">
+            {children}
+          </main>
+          <BottomNav />
         </div>
         <PWARegister />
         <InstallPrompt />
-        <PrayerNotifier />
       </body>
     </html>
   );
