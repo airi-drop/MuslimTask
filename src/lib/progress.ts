@@ -9,10 +9,41 @@ export type DayRecord = {
   date: string;
   /** subset of ["fajr","dhuhr","asr","maghrib","isha"] */
   prayers: string[];
+  /** Optional per-prayer claim metadata (timing, jamaah, computed XP).
+   *  Indexed by prayer key. Added when claim flows through Tab Amal.
+   *  Older records (or quick-toggle claims from Dashboard) may not have
+   *  entries here — that's OK; UI falls back to the flat `prayers` array. */
+  prayerClaims?: Record<string, PrayerClaim>;
+  /** Optional daily-amal flags (dzikir, quran, sedekah, puasa). Stored
+   *  on the day record so we have one source of truth instead of a
+   *  separate `mihrab-amal-*` keyspace. */
+  amal?: {
+    dzikirPagi?: boolean;
+    dzikirPetang?: boolean;
+    quranAyat?: number;
+    quranXp?: number;
+    sedekah?: boolean;
+    sedekahType?: "uang" | "makanan" | "tenaga";
+    puasa?: boolean;
+    puasaType?: "senin-kamis" | "ayyamul-bidh" | "dawud" | "lainnya";
+    sunnah?: Record<string, boolean>; // dhuha, tahajud, witir, rawatib-*
+  };
   /** XP from prayer checklist */
   prayerXp: number;
   /** XP from quests claimed on this day */
   questXp: number;
+};
+
+export type PrayerClaim = {
+  key: string;
+  /** ISO timestamp when claim happened */
+  claimTime: string;
+  /** ISO timestamp of the scheduled prayer time */
+  prayerTime: string;
+  xp: number;
+  isJamaah: boolean;
+  /** minutes late vs prayerTime; positive means after, negative means before */
+  diffMinutes: number;
 };
 
 export type Progress = {
@@ -293,6 +324,58 @@ export function markPrayer(
     ...today,
     prayers: [...today.prayers, key],
     prayerXp: today.prayerXp + XP_PER_PRAYER,
+  };
+  return recompute(setTodayRecord(p, next), now);
+}
+
+/**
+ * Claim a prayer with full timing/jamaah metadata. Stores the computed
+ * XP directly in `prayerXp` (not split into questXp), and saves the claim
+ * record under `prayerClaims[key]`. This is the canonical entry-point
+ * from Tab Amal — Dashboard's quick toggle uses `markPrayer` for flat
+ * 10 XP without metadata.
+ *
+ * Idempotent: re-claiming an already-claimed prayer is a no-op.
+ */
+export function claimPrayer(
+  p: Progress,
+  claim: PrayerClaim,
+  now: Date = new Date(),
+): Progress {
+  const today = getTodayRecord(p, now);
+  const key = claim.key;
+  if (today.prayers.includes(key)) return p; // already claimed
+  const nextClaims = { ...(today.prayerClaims ?? {}), [key]: claim };
+  const next: DayRecord = {
+    ...today,
+    prayers: [...today.prayers, key],
+    prayerClaims: nextClaims,
+    prayerXp: today.prayerXp + claim.xp,
+  };
+  return recompute(setTodayRecord(p, next), now);
+}
+
+/**
+ * Update a day's `amal` payload (dzikir, quran, sedekah, puasa, sunnah).
+ * Caller computes the XP delta and we apply it to `questXp`. The flag
+ * payload itself is merged shallowly.
+ */
+export function setAmalFlags(
+  p: Progress,
+  patch: NonNullable<DayRecord["amal"]>,
+  xpDelta: number,
+  now: Date = new Date(),
+): Progress {
+  const today = getTodayRecord(p, now);
+  const merged: NonNullable<DayRecord["amal"]> = {
+    ...(today.amal ?? {}),
+    ...patch,
+    sunnah: { ...(today.amal?.sunnah ?? {}), ...(patch.sunnah ?? {}) },
+  };
+  const next: DayRecord = {
+    ...today,
+    amal: merged,
+    questXp: Math.max(0, today.questXp + xpDelta),
   };
   return recompute(setTodayRecord(p, next), now);
 }

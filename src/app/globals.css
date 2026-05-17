@@ -2,34 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg: #F4EFDE;
-  --bg-grid: 32px;
-}
-
-.dark {
-  --bg: #070F18;
-  --bg-grid: 36px;
-}
+/* ─── Base — PRD §1.1 dark-first ─── */
 
 html,
 body {
-  background-color: var(--bg);
-  color: #063D26;
+  background-color: #050E08;
+  color: #E8F0EC;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Subtle dot grid that gives gaming-HUD vibe */
-  background-image: radial-gradient(circle at 1px 1px, rgba(15, 138, 87, 0.07) 1px, transparent 0);
-  background-size: var(--bg-grid) var(--bg-grid);
 }
 
-.dark body {
-  color: #E6F4ED;
-  background-image: radial-gradient(circle at 1px 1px, rgba(70, 242, 192, 0.06) 1px, transparent 0);
+/* Light-mode override via PRD attribute selector */
+[data-theme="light"] body {
+  background-color: #F5F2EC;
+  color: #1A2A1E;
 }
+
+/* Legacy `.dark` class (Tailwind class strategy) is also active.
+   When `.dark` is absent and `[data-theme="light"]` is set, the
+   override above kicks in. Default (no class, no attribute) = dark. */
+
+/* ─── Legacy components — kept temporarily for /tasbih, /mihrab/*,
+       /achievement, /settings pages that still consume them ─── */
 
 @layer components {
-  /* Light/dark aware card with subtle hairline border */
   .card {
     @apply rounded-3xl bg-white/90 ring-1 ring-emerald-100 shadow-card backdrop-blur;
   }
@@ -55,7 +51,6 @@ body {
     @apply border-emerald-900/60 bg-space-900/60;
   }
 
-  /* HUD-style outline that gives a "gamified" frame */
   .hud-frame {
     position: relative;
   }
@@ -82,13 +77,11 @@ body {
     border-bottom-right-radius: 6px;
   }
 
-  /* Reusable arabic text styling */
   .arabic {
     font-family: "Amiri", "Scheherazade New", serif;
     line-height: 2;
   }
 
-  /* Glow text used for level/streak numbers */
   .text-glow-neon {
     color: #46F2C0;
     text-shadow: 0 0 24px rgba(70, 242, 192, 0.45);
@@ -99,20 +92,17 @@ body {
   }
 }
 
-/* Scrollbar */
+/* ─── Scrollbar ─── */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(8, 84, 52, 0.18);
+  background: rgba(46, 138, 74, 0.18);
   border-radius: 999px;
 }
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(70, 242, 192, 0.18);
-}
 
-/* Phase 2 — PRD §1.5 utilities */
+/* ─── PRD §1.5 utilities ─── */
 
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);

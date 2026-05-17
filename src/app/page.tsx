@@ -21,9 +21,22 @@ import {
   getPrayerTimes,
   getNextPrayer,
   formatTime,
-  formatCountdown,
   type PrayerSlot,
 } from '@/lib/prayer';
+
+/* ─── Countdown formatter — MM:SS for sub-1h, HH:MM for >1h ─── */
+function formatCountdownShort(ms: number): { display: string; label: string } {
+  if (ms < 0) ms = 0;
+  const totalSeconds = Math.floor(ms / 1000);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  if (h > 0) {
+    return { display: `${pad(h)}:${pad(m)}`, label: 'jam : menit' };
+  }
+  return { display: `${pad(m)}:${pad(s)}`, label: 'menit : detik' };
+}
 
 /* ─── Rank helper ─── */
 function getRankInfo(level: number): { emoji: string; name: string } {
@@ -44,9 +57,12 @@ function getChipState(
   claimed: string[],
 ): ChipState {
   if (claimed.includes(slot.key)) return 'done';
-  if (slot.key === nextPrayer.key && slot.time.getTime() <= now.getTime()) return 'current';
+  // The prayer that is "current" is either:
+  //  - the next upcoming prayer (highlighted in advance), OR
+  //  - any prayer whose time has already passed but hasn't been claimed
+  //    (still in the claimable window — keeps it highlighted as `current`).
   if (slot.key === nextPrayer.key) return 'current';
-  if (slot.time.getTime() <= now.getTime()) return 'upcoming'; // passed but not claimed
+  if (slot.time.getTime() <= now.getTime()) return 'current'; // passed but not claimed
   return 'upcoming';
 }
 
@@ -185,11 +201,13 @@ export default function BerandaPage() {
           </div>
           {/* Right column */}
           <div className="text-right">
-            <p className="font-display text-3xl text-green-glow leading-none">
-              {prayerHasPassed ? '00:00:00' : formatCountdown(countdownMs)}
+            <p className="font-display text-3xl text-green-glow leading-none tabular-nums">
+              {prayerHasPassed ? '00:00' : formatCountdownShort(countdownMs).display}
             </p>
             <p className="font-ui text-[9px] text-text-muted mt-1">
-              {prayerHasPassed ? 'sudah masuk' : 'menit lagi'}
+              {prayerHasPassed
+                ? 'sudah masuk'
+                : formatCountdownShort(countdownMs).label}
             </p>
           </div>
         </div>
