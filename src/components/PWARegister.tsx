@@ -39,7 +39,7 @@ export function PWARegister() {
           });
         })
         .catch((err) => {
-          console.warn("[MuslimTask] SW registration failed", err);
+          console.warn("[Mihrab] SW registration failed", err);
         });
 
       // Reload when the new SW takes control after we tell it to skip waiting.

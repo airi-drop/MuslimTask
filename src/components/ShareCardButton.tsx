@@ -45,7 +45,7 @@ export function ShareCardButton({ data, className = "", label }: Props) {
     try {
       const res = await fetch(preview);
       const blob = await res.blob();
-      const filename = `muslimtask-streak-${new Date()
+      const filename = `mihrab-streak-${new Date()
         .toISOString()
         .slice(0, 10)}.png`;
       const result = await shareOrDownload(blob, filename);

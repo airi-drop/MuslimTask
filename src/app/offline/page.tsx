@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Offline — MuslimTask",
+  title: "Offline — Mihrab",
 };
 
 export default function OfflinePage() {

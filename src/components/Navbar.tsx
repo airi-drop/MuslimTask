@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -48,12 +49,12 @@ export function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex min-w-0 items-center gap-3">
           <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-parchment-50 shadow-glow">
-            <CrescentLogo className="h-6 w-6" />
+            <Image src="/logo.svg" alt="Mihrab" width={42} height={42} priority />
             <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-neon-400 animate-glow" />
           </div>
           <div className="min-w-0 leading-tight">
             <div className="truncate font-display text-xl font-bold tracking-tight text-emerald-800 dark:text-parchment-50">
-              MuslimTask
+              Mihrab
             </div>
             <div className="truncate text-[10px] font-semibold tracking-[0.2em] text-emerald-600/70 dark:text-neon-500/70">
               QUEST IBADAH HARIAN
@@ -136,10 +137,10 @@ export function Navbar() {
       <div className="card flex items-center justify-between px-3 py-2.5 sm:hidden">
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
           <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-parchment-50 shadow-glow">
-            <CrescentLogo className="h-4 w-4" />
+            <Image src="/logo.svg" alt="Mihrab" width={30} height={30} />
           </div>
           <span className="truncate font-display text-base font-bold text-emerald-800 dark:text-parchment-50">
-            MuslimTask
+            Mihrab
           </span>
         </Link>
         <div className="flex items-center gap-2">

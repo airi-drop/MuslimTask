@@ -9,9 +9,9 @@ export async function generateStaticParams() {
 export function generateMetadata({ params }: { params: { surah: string } }) {
   const n = Number(params.surah);
   const meta = SURAH_LIST.find((s) => s.nomor === n);
-  if (!meta) return { title: "Surah tidak ditemukan — MuslimTask" };
+  if (!meta) return { title: "Surah tidak ditemukan — Mihrab" };
   return {
-    title: `${meta.namaLatin} (${meta.arti}) — MuslimTask`,
+    title: `${meta.namaLatin} (${meta.arti}) — Mihrab`,
     description: `Baca surah ${meta.namaLatin} (${meta.arti}) — ${meta.jumlahAyat} ayat. Tersimpan offline.`,
   };
 }

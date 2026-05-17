@@ -1,5 +1,5 @@
 /*
- * MuslimTask Service Worker
+ * Mihrab Service Worker
  *
  * Strategy:
  *   - HTML pages: network-first, fallback to cache, then offline page
@@ -8,10 +8,10 @@
  *   - Activate cleans up old cache versions
  */
 
-const VERSION = "v1.1.0";
-const CACHE_HTML = `mt-html-${VERSION}`;
-const CACHE_STATIC = `mt-static-${VERSION}`;
-const CACHE_DATA = `mt-data-${VERSION}`;
+const VERSION = "v1.2.0";
+const CACHE_HTML = `mh-html-${VERSION}`;
+const CACHE_STATIC = `mh-static-${VERSION}`;
+const CACHE_DATA = `mh-data-${VERSION}`;
 
 const PRECACHE_URLS = [
   "/",
@@ -53,7 +53,7 @@ self.addEventListener("activate", (event) => {
         keys
           .filter(
             (k) =>
-              k.startsWith("mt-") &&
+              (k.startsWith("mt-") || k.startsWith("mh-")) &&
               ![CACHE_HTML, CACHE_STATIC, CACHE_DATA].includes(k),
           )
           .map((k) => caches.delete(k)),

@@ -2,39 +2,33 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "MuslimTask — Quest Ibadah Harian",
-    short_name: "MuslimTask",
+    name: "Mihrab",
+    short_name: "Mihrab",
     description:
-      "Tingkatkan konsistensi ibadah lewat sistem quest, streak, dan achievement. Offline-first.",
+      "Tracker kualitas ibadah harian. Ukur, tingkatkan, banggakan perjalanan spiritualmu.",
     start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#070F18",
-    theme_color: "#04261A",
+    background_color: "#050E08",
+    theme_color: "#0C1A14",
     lang: "id",
-    categories: ["lifestyle", "education", "productivity"],
+    categories: ["lifestyle", "health"],
     icons: [
       {
-        src: "/icon",
+        src: "/icon-192.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icon2",
+        src: "/icon-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/apple-icon",
-        sizes: "180x180",
-        type: "image/png",
-        purpose: "any",
-      },
-      {
-        src: "/maskable-icon",
+        src: "/icon-maskable-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

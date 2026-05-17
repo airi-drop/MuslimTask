@@ -185,7 +185,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   ctx.fillStyle = "#46F2C0";
   ctx.font = "700 32px ui-sans-serif, system-ui, sans-serif";
   ctx.textBaseline = "top";
-  ctx.fillText("MUSLIMTASK", padX, 80);
+  ctx.fillText("MIHRAB", padX, 80);
 
   ctx.fillStyle = "rgba(232, 244, 237, 0.5)";
   ctx.font = "500 22px ui-sans-serif, system-ui, sans-serif";
@@ -307,7 +307,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   const footY = H - 100;
   ctx.fillStyle = "rgba(70, 242, 192, 0.9)";
   ctx.font = "700 26px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText("muslimtask.app", padX, footY);
+  ctx.fillText("mihrab.app", padX, footY);
 
   ctx.textAlign = "right";
   ctx.fillStyle = "rgba(232, 244, 237, 0.5)";
@@ -393,8 +393,8 @@ export async function shareOrDownload(
     try {
       await navigator.share({
         files: [file],
-        title: "MuslimTask",
-        text: text ?? "My daily worship progress 💚 #MuslimTask",
+        title: "Mihrab",
+        text: text ?? "My daily worship progress 💚 #Mihrab",
       });
       return "shared";
     } catch {

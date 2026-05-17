@@ -1,7 +1,7 @@
 import { DoaList } from "@/components/DoaList";
 
 export const metadata = {
-  title: "Doa Harian — MuslimTask",
+  title: "Doa Harian — Mihrab",
   description: "Kumpulan doa untuk aktivitas sehari-hari dengan kategori dan pencarian.",
 };
 

@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
-const KEY = "mt:theme";
+const KEY = "mihrab-theme";
+const LEGACY_KEY = "mt:theme";
 
 function applyTheme(t: Theme) {
   const root = document.documentElement;
+  root.setAttribute("data-theme", t);
   if (t === "dark") root.classList.add("dark");
   else root.classList.remove("dark");
 }
@@ -14,34 +16,50 @@ function applyTheme(t: Theme) {
 /**
  * Inline script that runs before React hydrates — prevents flash of wrong theme.
  * Place once in <head> (via layout).
+ *
+ * Read order: mihrab-theme (PRD canonical) → mt:theme (legacy) → default "dark".
+ * Applies BOTH the data-theme attribute AND the .dark class so PRD selectors
+ * and legacy `dark:` Tailwind variants both resolve correctly.
  */
 export const themeBootScript = `
 (function(){
   try {
-    var t = localStorage.getItem("${KEY}");
-    if (!t) {
-      t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    }
-    if (t === "dark") document.documentElement.classList.add("dark");
-  } catch(e){}
+    var t = localStorage.getItem("${KEY}") || localStorage.getItem("${LEGACY_KEY}");
+    if (t !== "dark" && t !== "light") t = "dark";
+    var root = document.documentElement;
+    root.setAttribute("data-theme", t);
+    if (t === "dark") root.classList.add("dark");
+  } catch(e){
+    document.documentElement.setAttribute("data-theme", "dark");
+    document.documentElement.classList.add("dark");
+  }
 })();
 `;
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = (localStorage.getItem(KEY) as Theme | null) ??
-      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    setTheme(saved);
+    const fresh = localStorage.getItem(KEY) as Theme | null;
+    const legacy = localStorage.getItem(LEGACY_KEY) as Theme | null;
+    const saved: Theme =
+      fresh === "dark" || fresh === "light"
+        ? fresh
+        : legacy === "dark" || legacy === "light"
+          ? legacy
+          : "dark";
+    setThemeState(saved);
     setMounted(true);
   }, []);
 
   function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
+    setThemeState(next);
+    // Dual-write both keys so theme.ts (bridge mode) and any consumer reading
+    // either key sees the same value.
     localStorage.setItem(KEY, next);
+    localStorage.setItem(LEGACY_KEY, next);
     applyTheme(next);
   }
 

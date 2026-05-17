@@ -1,6 +1,6 @@
-# MuslimTask
+# Mihrab
 
-**Quest ibadah harian** dengan vibe gaming-Islamic. Offline-first. Sistem quest, streak, XP, level, dan achievement untuk membantu konsistensi ibadah harian.
+**Tracker kualitas ibadah harian.** Ukur, tingkatkan, dan banggakan perjalanan spiritualmu lewat sistem Amal Score, rank Islami, dan achievement. Offline-first, full Indonesian.
 
 ## Fitur
 

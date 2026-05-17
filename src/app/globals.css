@@ -111,3 +111,30 @@ body {
 .dark ::-webkit-scrollbar-thumb {
   background: rgba(70, 242, 192, 0.18);
 }
+
+/* Phase 2 — PRD §1.5 utilities */
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.h-dvh {
+  height: 100dvh;
+}
+
+html {
+  scroll-behavior: smooth;
+}

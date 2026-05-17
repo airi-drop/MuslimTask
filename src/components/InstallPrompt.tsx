@@ -109,7 +109,7 @@ export function InstallPrompt() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate font-display text-sm font-bold text-emerald-800 dark:text-parchment-50">
-            Pasang MuslimTask
+            Pasang Mihrab
           </div>
           <div className="truncate text-xs text-emerald-700/70 dark:text-parchment-100/60">
             Akses lebih cepat dan tetap jalan offline.
