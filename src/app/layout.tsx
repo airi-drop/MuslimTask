@@ -1,16 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Cinzel, DM_Sans, Amiri } from "next/font/google";
+import dynamic from "next/dynamic";
 import "./globals.css";
+
+// Critical path — render immediately
 import BottomNav from "@/components/layout/BottomNav";
 import { ThemeBoot } from "@/components/ThemeBoot";
-import { PWARegister } from "@/components/PWARegister";
-import { InstallPrompt } from "@/components/InstallPrompt";
 import { OnboardingGate } from "@/components/OnboardingGate";
-import { NotificationManager } from "@/components/NotificationManager";
+
+// Non-critical — lazy load (these show conditionally or after delay)
+const PWARegister = dynamic(() => import("@/components/PWARegister").then(m => ({ default: m.PWARegister })), { ssr: false });
+const InstallPrompt = dynamic(() => import("@/components/InstallPrompt").then(m => ({ default: m.InstallPrompt })), { ssr: false });
+const NotificationManager = dynamic(() => import("@/components/NotificationManager").then(m => ({ default: m.NotificationManager })), { ssr: false });
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["500"],
   style: ["normal", "italic"],
   variable: "--font-display",
   display: "swap",
@@ -18,14 +23,14 @@ const cormorant = Cormorant_Garamond({
 
 const cinzel = Cinzel({
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["500"],
   variable: "--font-ornament",
   display: "swap",
 });
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+  weight: ["400", "500", "600"],
   variable: "--font-ui",
   display: "swap",
 });
@@ -33,7 +38,7 @@ const dmSans = DM_Sans({
 const amiri = Amiri({
   subsets: ["arabic"],
   variable: "--font-arabic",
-  weight: ["400", "700"],
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {

@@ -7,7 +7,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { ACHIEVEMENTS, type Achievement } from "@/lib/achievements";
 import { tierFromCategory, tierEmoji, type Tier } from "@/lib/achievementTier";
-import { renderShareCard, shareOrDownload, type ShareCardData } from "@/lib/share";
+import type { ShareCardData } from "@/lib/share";
 
 type Props = {
   /** Achievement IDs to celebrate. Pass [] to hide. */
@@ -57,6 +57,7 @@ export function AchievementUnlockToast({ ids, onDismiss, username = "Musafir" }:
   async function handleShare() {
     setSharing(true);
     try {
+      const { renderShareCard, shareOrDownload } = await import("@/lib/share");
       const data: ShareCardData = {
         username,
         streak: 0,

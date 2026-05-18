@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import {
-  renderShareCard,
-  shareOrDownload,
-  type ShareCardData,
-} from "@/lib/share";
+import type { ShareCardData } from "@/lib/share";
+
+// Lazy-load the heavy canvas rendering code
+const loadShareModule = () => import("@/lib/share");
+
+export type { ShareCardData };
 
 type Props = {
   data: () => ShareCardData;
@@ -24,6 +25,7 @@ export function ShareCardButton({ data, className = "", label }: Props) {
     setBusy(true);
     setHint(null);
     try {
+      const { renderShareCard } = await loadShareModule();
       const blob = await renderShareCard(data());
       const url = URL.createObjectURL(blob);
       setPreview(url);
@@ -43,6 +45,7 @@ export function ShareCardButton({ data, className = "", label }: Props) {
     if (!preview) return;
     setBusy(true);
     try {
+      const { shareOrDownload } = await loadShareModule();
       const res = await fetch(preview);
       const blob = await res.blob();
       const cardType = data().cardType ?? "weekly";
