@@ -135,6 +135,8 @@ export default function AmalPage() {
   const [showSedekahTypes, setShowSedekahTypes] = useState(false);
   const [showPuasaTypes, setShowPuasaTypes] = useState(false);
 
+  const [dzikirOverlay, setDzikirOverlay] = useState<"pagi" | "petang" | null>(null);
+
   // Load on mount
   useEffect(() => {
     const loc = loadLocation();
@@ -203,6 +205,7 @@ export default function AmalPage() {
     const patch =
       type === "pagi" ? { dzikirPagi: true } : { dzikirPetang: true };
     persist(setAmalFlags(progress, patch, xp));
+    setDzikirOverlay(type);
   }
 
   function isDzikirInWindow(type: "pagi" | "petang"): boolean {
@@ -700,6 +703,54 @@ export default function AmalPage() {
             >
               Batal
             </button>
+          </div>
+        </>
+      )}
+      {/* Dzikir Confirmation Overlay (PRD §5.4) */}
+      {dzikirOverlay && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/60 animate-fade-in"
+            onClick={() => setDzikirOverlay(null)}
+          />
+          <div className="fixed inset-x-0 bottom-0 z-50 bg-bg-mid border-t border-text-ghost/30 rounded-t-2xl p-5 pb-safe animate-slide-up max-w-[430px] mx-auto max-h-[70vh] overflow-y-auto">
+            <div className="w-10 h-1 bg-text-ghost/40 rounded-full mx-auto mb-4" />
+            <p className="font-ornament text-[9px] uppercase tracking-widest text-text-muted mb-3">
+              {dzikirOverlay === "pagi" ? "DZIKIR PAGI" : "DZIKIR PETANG"} ✓
+            </p>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <p className="font-arabic text-right text-lg text-text-primary leading-relaxed" dir="rtl">
+                  سُبْحَانَ اللَّهِ وَبِحَمْدِهِ
+                </p>
+                <p className="text-xs text-text-secondary">Subhanallahi wa bihamdihi</p>
+                <p className="text-[10px] text-text-muted">Maha Suci Allah dan segala puji bagi-Nya (3×)</p>
+              </div>
+              <div className="h-px bg-text-ghost/20" />
+              <div className="space-y-1">
+                <p className="font-arabic text-right text-lg text-text-primary leading-relaxed" dir="rtl">
+                  أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ
+                </p>
+                <p className="text-xs text-text-secondary">Astaghfirullaha wa atubu ilaihi</p>
+                <p className="text-[10px] text-text-muted">Aku memohon ampun dan bertaubat kepada Allah (3×)</p>
+              </div>
+              <div className="h-px bg-text-ghost/20" />
+              <div className="space-y-1">
+                <p className="font-arabic text-right text-lg text-text-primary leading-relaxed" dir="rtl">
+                  اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ
+                </p>
+                <p className="text-xs text-text-secondary">Allahumma antas-salam wa minkas-salam, tabarakta ya dzal-jalali wal-ikram</p>
+                <p className="text-[10px] text-text-muted">Ya Allah, Engkau pemberi keselamatan dan dari-Mu keselamatan (1×)</p>
+              </div>
+            </div>
+            <Button
+              variant="primary"
+              fullWidth
+              className="mt-5"
+              onClick={() => setDzikirOverlay(null)}
+            >
+              Tutup
+            </Button>
           </div>
         </>
       )}

@@ -110,7 +110,7 @@ export default function ProfilPage() {
 
   return (
     <div className="px-5 py-6 pb-24 space-y-6">
-      <AchievementUnlockToast ids={toastIds} onDismiss={handleDismissToast} />
+      <AchievementUnlockToast ids={toastIds} onDismiss={handleDismissToast} username={name} />
 
       {/* Profile Header */}
       <div className="flex items-center gap-4">
