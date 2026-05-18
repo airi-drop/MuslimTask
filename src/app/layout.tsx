@@ -6,6 +6,7 @@ import { ThemeBoot } from "@/components/ThemeBoot";
 import { PWARegister } from "@/components/PWARegister";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { OnboardingGate } from "@/components/OnboardingGate";
+import { NotificationManager } from "@/components/NotificationManager";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -88,6 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-ui bg-bg-deepest text-text-primary min-h-dvh">
         <ThemeBoot />
         <OnboardingGate />
+        <NotificationManager />
         <div className="max-w-[430px] mx-auto min-h-dvh flex flex-col relative">
           <main className="flex-1 overflow-y-auto pb-[72px] pt-safe">
             {children}
