@@ -45,9 +45,9 @@ export function ShareCardButton({ data, className = "", label }: Props) {
     try {
       const res = await fetch(preview);
       const blob = await res.blob();
-      const filename = `mihrab-streak-${new Date()
-        .toISOString()
-        .slice(0, 10)}.png`;
+      const cardType = data().cardType ?? "weekly";
+      const date = new Date().toISOString().slice(0, 10);
+      const filename = `mihrab-${cardType}-${date}.png`;
       const result = await shareOrDownload(blob, filename);
       setHint(
         result === "shared"

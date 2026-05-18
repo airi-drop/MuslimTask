@@ -1,9 +1,22 @@
 /**
- * Premium shareable image generator using Canvas 2D API.
- * Produces a 1080x1920 PNG (9:16, optimal for IG/WA story).
+ * Premium shareable image generator (PRD §9.2 — Phase 9).
+ * Produces a 1080x1080 (1:1) PNG using the Mihrab palette and font stack.
  *
- * Pure browser / no external libs — fonts use system stack.
+ * Three card types share the same skeleton:
+ *   - weekly      → progress recap (default)
+ *   - achievement → badge unlock card
+ *   - milestone   → streak / count milestone
+ *
+ * Public API is backward compatible with the prior 9:16 implementation:
+ *   - ShareCardData (with new optional cardType / achievement / milestone)
+ *   - renderShareCard(data): Promise<Blob>
+ *   - downloadBlob(blob, filename)
+ *   - shareOrDownload(blob, filename, text?)
  */
+
+/* ─────────────────────────────────────────────────────────
+ * Public types
+ * ──────────────────────────────────────────────────────── */
 
 export type ShareCardData = {
   username: string;
@@ -14,37 +27,75 @@ export type ShareCardData = {
   todayXp: number;
   prayedCount: number;
   prayerTarget: number;
-  headline?: string;
-  subline?: string;
   hijri?: string;
   gregorian?: string;
+  /** Override card type. Default = 'weekly'. */
+  cardType?: "weekly" | "achievement" | "milestone";
+  /** Required when cardType === 'achievement'. */
+  achievement?: {
+    name: string;
+    description: string;
+    tier: "common" | "mid" | "rare" | "legendary";
+    emoji: string;
+  };
+  /** Required when cardType === 'milestone'. */
+  milestone?: {
+    /** e.g. "30 Hari Berturut", "100 Salat" */
+    label: string;
+    /** e.g. 30, 100 */
+    value: number;
+  };
 };
 
+/* ─────────────────────────────────────────────────────────
+ * Constants
+ * ──────────────────────────────────────────────────────── */
+
 const W = 1080;
-const H = 1920;
+const H = 1080;
+const PAD = 96;
 
-/** Rank title based on level */
-function getRank(level: number): { title: string; titleEn: string } {
-  if (level >= 20) return { title: "Wali Ibadah", titleEn: "Worship Guardian" };
-  if (level >= 15) return { title: "Hafiz Istiqamah", titleEn: "Steadfast Hafiz" };
-  if (level >= 10) return { title: "Mujahid Ruhani", titleEn: "Spiritual Warrior" };
-  if (level >= 7) return { title: "Salik Mujtahid", titleEn: "Devoted Traveler" };
-  if (level >= 4) return { title: "Murid Setia", titleEn: "Faithful Student" };
-  if (level >= 2) return { title: "Pencari Cahaya", titleEn: "Light Seeker" };
-  return { title: "Musafir", titleEn: "Traveler" };
-}
+/** PRD palette */
+const C = {
+  bgDeepest: "#050E08",
+  greenDim: "rgba(58, 138, 82, 0.25)",
+  greenDivider: "rgba(58, 138, 82, 0.20)",
+  greenAttribution: "rgba(58, 138, 82, 0.7)",
+  greenMain: "#3A8A52",
+  greenGlow: "#5DC47A",
+  goldSubtle: "rgba(196, 136, 42, 0.1)",
+  goldMain: "#C4882A",
+  goldLight: "#D4A040",
+  goldGlow: "#E8BC5A",
+  textPrimary: "#E8F0EC",
+  textSecondary: "#7A9A86",
+  textMuted: "#3A5A44",
+  textGhost: "#1E3028",
+} as const;
 
-/** Streak badge */
-function getStreakBadge(streak: number): string {
-  if (streak >= 100) return "🏆 LEGENDARY";
-  if (streak >= 30) return "⭐ MASTER";
-  if (streak >= 14) return "🔥 ON FIRE";
-  if (streak >= 7) return "💪 STRONG";
-  if (streak >= 3) return "✨ RISING";
-  return "🌱 STARTING";
-}
+/** Font family stacks — literal next/font/google family names with safe fallbacks. */
+const FONT = {
+  display: "'Cormorant Garamond', 'Cormorant', Georgia, serif",
+  ornament: "'Cinzel', Georgia, serif",
+  ui: "'DM Sans', system-ui, sans-serif",
+} as const;
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+const QUOTE_TEXT =
+  "\u201CSebaik-baik amal adalah yang paling konsisten, meskipun sedikit.\u201D";
+const QUOTE_ATTR = "\u2014 HR. Bukhari & Muslim";
+
+/* ─────────────────────────────────────────────────────────
+ * Helpers
+ * ──────────────────────────────────────────────────────── */
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
   const radius = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
@@ -55,94 +106,316 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
-function drawDotGrid(ctx: CanvasRenderingContext2D) {
-  ctx.fillStyle = "rgba(70, 242, 192, 0.05)";
-  for (let y = 0; y < H; y += 40) {
-    for (let x = 0; x < W; x += 40) {
-      ctx.beginPath();
-      ctx.arc(x, y, 1.2, 0, Math.PI * 2);
-      ctx.fill();
+/**
+ * Wrap `text` into lines that fit within `maxWidth`. Returns the y-coordinate
+ * after the last line (alphabetic baseline) so callers can stack content.
+ */
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+): number {
+  const words = text.split(" ");
+  let line = "";
+  let cursorY = y;
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(test).width > maxWidth) {
+      ctx.fillText(line, x, cursorY);
+      line = word;
+      cursorY += lineHeight;
+    } else {
+      line = test;
     }
   }
+  if (line) {
+    ctx.fillText(line, x, cursorY);
+  }
+  return cursorY;
 }
 
-function drawIslamicPattern(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, rotation = 0) {
+/** Small crescent + 5-point star ornament for the top-right corner. */
+function drawCrescentOrnament(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+) {
+  // Crescent: full disk minus an offset disk filled with bg color.
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(rotation);
-  ctx.strokeStyle = "rgba(245, 190, 61, 0.2)";
-  ctx.lineWidth = 1.5;
-
-  // 8-point star
+  ctx.fillStyle = C.goldLight;
   ctx.beginPath();
-  for (let i = 0; i < 16; i++) {
-    const angle = (i * Math.PI) / 8;
-    const radius = i % 2 === 0 ? r : r * 0.55;
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = C.bgDeepest;
+  ctx.beginPath();
+  ctx.arc(cx + r * 0.32, cy - r * 0.1, r * 0.86, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 5-point star to the upper right of the crescent.
+  ctx.save();
+  ctx.fillStyle = C.goldLight;
+  const sx = cx + r * 1.55;
+  const sy = cy - r * 0.45;
+  const sr = r * 0.42;
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const angle = (i * Math.PI) / 5 - Math.PI / 2;
+    const radius = i % 2 === 0 ? sr : sr * 0.45;
+    const px = sx + Math.cos(angle) * radius;
+    const py = sy + Math.sin(angle) * radius;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
   }
   ctx.closePath();
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.75, 0, Math.PI * 2);
-  ctx.stroke();
-
+  ctx.fill();
   ctx.restore();
 }
 
-function drawProgressRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, pct: number, color: string) {
-  // Background ring
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(70, 242, 192, 0.15)";
-  ctx.lineWidth = 12;
-  ctx.stroke();
+/* ─────────────────────────────────────────────────────────
+ * Rank inference (matches src/app/profil/page.tsx getRankInfo)
+ * ──────────────────────────────────────────────────────── */
 
-  // Progress arc
-  if (pct > 0) {
-    const startAngle = -Math.PI / 2;
-    const endAngle = startAngle + (Math.PI * 2 * Math.min(pct, 100)) / 100;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, startAngle, endAngle);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 12;
-    ctx.lineCap = "round";
-    ctx.stroke();
-    ctx.lineCap = "butt";
+function getRankInfo(level: number): { title: string; emoji: string } {
+  if (level >= 20) return { title: "Wali Ibadah", emoji: "\uD83D\uDC51" }; // 👑
+  if (level >= 15) return { title: "Hafiz Istiqamah", emoji: "\uD83D\uDCAA" }; // 💪
+  if (level >= 10) return { title: "Mujahid Ruhani", emoji: "\uD83D\uDD25" }; // 🔥
+  if (level >= 5) return { title: "Murid Setia", emoji: "\u2B50" }; // ⭐
+  return { title: "Musafir", emoji: "\uD83C\uDF31" }; // 🌱
+}
+
+/* ─────────────────────────────────────────────────────────
+ * Tier helpers (kept inline to avoid a back-import on
+ * achievementTier.ts — the tier labels here mirror that file)
+ * ──────────────────────────────────────────────────────── */
+
+type Tier = "common" | "mid" | "rare" | "legendary";
+
+const TIER_COLOR: Record<Tier, string> = {
+  common: C.textSecondary,
+  mid: "#4AAA66",
+  rare: C.goldLight,
+  legendary: C.goldGlow,
+};
+
+const TIER_LABEL: Record<Tier, string> = {
+  common: "Common",
+  mid: "Menengah",
+  rare: "Langka",
+  legendary: "Legendaris",
+};
+
+/* ─────────────────────────────────────────────────────────
+ * Skeleton — drawn first for all three card types
+ * ──────────────────────────────────────────────────────── */
+
+function drawSkeleton(ctx: CanvasRenderingContext2D) {
+  // Solid background
+  ctx.fillStyle = C.bgDeepest;
+  ctx.fillRect(0, 0, W, H);
+
+  // Outer green border
+  ctx.strokeStyle = C.greenDim;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(48, 48, 984, 984);
+
+  // Inner subtle gold border
+  ctx.strokeStyle = C.goldSubtle;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(56, 56, 968, 968);
+
+  // Top-left brand mark
+  ctx.fillStyle = C.textMuted;
+  ctx.font = `500 28px ${FONT.ornament}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText("MIHRAB", PAD, 120);
+
+  // Top-right crescent + star ornament
+  drawCrescentOrnament(ctx, W - PAD - 24, 110, 28);
+
+  // Footer
+  ctx.fillStyle = C.textGhost;
+  ctx.font = `400 22px ${FONT.ui}`;
+  ctx.textAlign = "left";
+  ctx.fillText("mihrab.app", PAD, 1000);
+}
+
+/* ─────────────────────────────────────────────────────────
+ * Quote block — shared between weekly + milestone
+ * ──────────────────────────────────────────────────────── */
+
+function drawQuote(
+  ctx: CanvasRenderingContext2D,
+  startY: number,
+  data: ShareCardData,
+) {
+  const maxWidth = W - PAD * 2;
+
+  ctx.fillStyle = C.textSecondary;
+  ctx.font = `italic 400 28px ${FONT.display}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  wrapText(ctx, QUOTE_TEXT, PAD, startY, maxWidth, 40);
+
+  ctx.fillStyle = C.greenAttribution;
+  ctx.font = `400 22px ${FONT.ui}`;
+  ctx.fillText(QUOTE_ATTR, PAD, 900);
+
+  // Optional date line(s) under the attribution.
+  if (data.gregorian || data.hijri) {
+    ctx.fillStyle = C.textSecondary;
+    ctx.font = `400 22px ${FONT.ui}`;
+    const parts = [data.gregorian, data.hijri].filter(Boolean) as string[];
+    ctx.fillText(parts.join("  \u2022  "), PAD, 940);
   }
 }
 
-function drawCrescent(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  ctx.save();
-  ctx.fillStyle = "rgba(245, 190, 61, 0.9)";
+/* ─────────────────────────────────────────────────────────
+ * Card variants
+ * ──────────────────────────────────────────────────────── */
+
+function drawWeeklyCard(ctx: CanvasRenderingContext2D, data: ShareCardData) {
+  const rank = getRankInfo(data.level);
+
+  // Rank badge (just below MIHRAB brand)
+  ctx.fillStyle = C.goldLight;
+  ctx.font = `500 24px ${FONT.ornament}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(`${rank.emoji} ${rank.title.toUpperCase()}`, PAD, 165);
+
+  // Username (display italic)
+  ctx.fillStyle = C.textPrimary;
+  ctx.font = `italic 500 52px ${FONT.display}`;
+  ctx.fillText(data.username, PAD, 240);
+
+  // Divider
+  ctx.strokeStyle = C.greenDivider;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#04261A";
-  ctx.beginPath();
-  ctx.arc(cx + r * 0.35, cy - r * 0.1, r * 0.88, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
+  ctx.moveTo(PAD, 270);
+  ctx.lineTo(W - PAD, 270);
+  ctx.stroke();
+
+  // Big number — derived "amal score" for the week
+  const amalScore = Math.max(0, data.todayXp + 100 * data.level);
+  ctx.fillStyle = C.greenGlow;
+  ctx.font = `600 200px ${FONT.display}`;
+  ctx.fillText(String(amalScore), PAD, 510);
+
+  // Score label
+  ctx.fillStyle = C.textMuted;
+  ctx.font = `400 30px ${FONT.ui}`;
+  ctx.fillText("Total XP minggu ini", PAD, 560);
+
+  // Stat row — prayed count vs target
+  ctx.fillStyle = C.goldLight;
+  ctx.font = `500 36px ${FONT.ui}`;
+  ctx.fillText(
+    `${data.prayedCount}/${data.prayerTarget} salat`,
+    PAD,
+    640,
+  );
+
+  // Sub: streak info
+  ctx.fillStyle = C.textMuted;
+  ctx.font = `400 26px ${FONT.ui}`;
+  ctx.fillText(
+    `Streak: ${data.streak} hari \u00B7 Best: ${data.bestStreak}`,
+    PAD,
+    690,
+  );
+
+  // Quote block (with optional dates)
+  drawQuote(ctx, 800, data);
 }
 
-function drawHudCorners(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
-  ctx.save();
-  ctx.strokeStyle = "rgba(70, 242, 192, 0.6)";
-  ctx.lineWidth = 3;
-  const len = 30;
-  ctx.beginPath(); ctx.moveTo(x + 4, y + len); ctx.lineTo(x + 4, y + 4); ctx.lineTo(x + len, y + 4); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x + w - 4, y + 4); ctx.lineTo(x + w - 4, y + len); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x + w - len, y + 4); ctx.lineTo(x + w - 4, y + 4); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x + 4, y + h - len); ctx.lineTo(x + 4, y + h - 4); ctx.lineTo(x + len, y + h - 4); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x + w - 4, y + h - len); ctx.lineTo(x + w - 4, y + h - 4); ctx.lineTo(x + w - len, y + h - 4); ctx.stroke();
-  ctx.restore();
+function drawAchievementCard(
+  ctx: CanvasRenderingContext2D,
+  data: ShareCardData,
+) {
+  const a = data.achievement;
+  if (!a) {
+    // Fallback to weekly if achievement payload is missing.
+    drawWeeklyCard(ctx, data);
+    return;
+  }
+
+  const cx = W / 2;
+
+  // Large emoji center
+  ctx.fillStyle = C.textPrimary;
+  ctx.font = `400 200px ${FONT.ui}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(a.emoji, cx, 380);
+
+  // Tier label
+  ctx.fillStyle = TIER_COLOR[a.tier];
+  ctx.font = `500 20px ${FONT.ornament}`;
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(TIER_LABEL[a.tier].toUpperCase(), cx, 540);
+
+  // Achievement name
+  ctx.fillStyle = C.textPrimary;
+  ctx.font = `italic 500 56px ${FONT.display}`;
+  ctx.fillText(a.name, cx, 620);
+
+  // Description (wrapped, centered)
+  ctx.fillStyle = C.textSecondary;
+  ctx.font = `400 24px ${FONT.ui}`;
+  wrapText(ctx, a.description, cx, 680, W - PAD * 2, 34);
+
+  // Username at bottom
+  ctx.fillStyle = C.textMuted;
+  ctx.font = `400 22px ${FONT.ui}`;
+  ctx.fillText(`${data.username} unlocked this`, cx, 940);
+
+  // Reset alignment for downstream draws
+  ctx.textAlign = "left";
 }
+
+function drawMilestoneCard(
+  ctx: CanvasRenderingContext2D,
+  data: ShareCardData,
+) {
+  const m = data.milestone ?? {
+    label: `${data.streak} Hari Berturut`,
+    value: data.streak,
+  };
+
+  const cx = W / 2;
+
+  // Big milestone number
+  ctx.fillStyle = C.goldGlow;
+  ctx.font = `600 280px ${FONT.display}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(String(m.value), cx, 460);
+
+  // Milestone label (uppercase ornament)
+  ctx.fillStyle = C.goldLight;
+  ctx.font = `500 36px ${FONT.ornament}`;
+  ctx.fillText(m.label.toUpperCase(), cx, 620);
+
+  // Username
+  ctx.fillStyle = C.textPrimary;
+  ctx.font = `italic 500 36px ${FONT.display}`;
+  ctx.fillText(data.username, cx, 720);
+
+  // Quote — keep left-aligned at PAD for consistency with weekly
+  ctx.textAlign = "left";
+  drawQuote(ctx, 800, data);
+}
+
+/* ─────────────────────────────────────────────────────────
+ * Public API
+ * ──────────────────────────────────────────────────────── */
 
 export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   const canvas = document.createElement("canvas");
@@ -151,179 +424,26 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D not supported.");
 
-  const padX = 80;
-  const rank = getRank(data.level);
-  const badge = getStreakBadge(data.streak);
-  const prayerPct = Math.round((data.prayedCount / data.prayerTarget) * 100);
-
-  // ===== Background =====
-  const bg = ctx.createLinearGradient(0, 0, W * 0.3, H);
-  bg.addColorStop(0, "#0A3D2A");
-  bg.addColorStop(0.4, "#04261A");
-  bg.addColorStop(1, "#020E0A");
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-
-  // Glows
-  const g1 = ctx.createRadialGradient(W * 0.8, H * 0.12, 50, W * 0.8, H * 0.12, 450);
-  g1.addColorStop(0, "rgba(245, 190, 61, 0.3)");
-  g1.addColorStop(1, "rgba(245, 190, 61, 0)");
-  ctx.fillStyle = g1;
-  ctx.fillRect(0, 0, W, H);
-
-  const g2 = ctx.createRadialGradient(W * 0.15, H * 0.7, 50, W * 0.15, H * 0.7, 500);
-  g2.addColorStop(0, "rgba(70, 242, 192, 0.2)");
-  g2.addColorStop(1, "rgba(70, 242, 192, 0)");
-  ctx.fillStyle = g2;
-  ctx.fillRect(0, 0, W, H);
-
-  drawDotGrid(ctx);
-  drawIslamicPattern(ctx, W * 0.85, H * 0.08, 160, Math.PI / 12);
-  drawIslamicPattern(ctx, W * 0.15, H * 0.92, 120, 0);
-
-  // ===== Top brand =====
-  ctx.fillStyle = "#46F2C0";
-  ctx.font = "700 32px ui-sans-serif, system-ui, sans-serif";
-  ctx.textBaseline = "top";
-  ctx.fillText("MIHRAB", padX, 80);
-
-  ctx.fillStyle = "rgba(232, 244, 237, 0.5)";
-  ctx.font = "500 22px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText("QUEST IBADAH HARIAN", padX, 120);
-
-  drawCrescent(ctx, W - padX - 35, 100, 30);
-
-  // ===== Username + Rank =====
-  ctx.fillStyle = "rgba(232, 244, 237, 0.7)";
-  ctx.font = "500 28px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText(`@${data.username}`, padX, 200);
-
-  ctx.fillStyle = "#F5BE3D";
-  ctx.font = "700 36px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText(rank.title, padX, 240);
-
-  // ===== Main streak card =====
-  const cardY = 320;
-  const cardH = 480;
-  roundRect(ctx, padX, cardY, W - padX * 2, cardH, 40);
-  const cardGrad = ctx.createLinearGradient(padX, cardY, W - padX, cardY + cardH);
-  cardGrad.addColorStop(0, "rgba(10, 61, 42, 0.8)");
-  cardGrad.addColorStop(1, "rgba(2, 14, 10, 0.9)");
-  ctx.fillStyle = cardGrad;
-  ctx.fill();
-  ctx.strokeStyle = "rgba(70, 242, 192, 0.2)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  drawHudCorners(ctx, padX, cardY, W - padX * 2, cardH);
-
-  // Badge
-  ctx.fillStyle = "rgba(245, 190, 61, 0.15)";
-  roundRect(ctx, padX + 40, cardY + 35, 200, 40, 20);
-  ctx.fill();
-  ctx.fillStyle = "#F5BE3D";
-  ctx.font = "700 22px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText(badge, padX + 55, cardY + 43);
-
-  // Big streak number
-  ctx.shadowColor = "rgba(245, 190, 61, 0.5)";
-  ctx.shadowBlur = 60;
-  ctx.fillStyle = "#F5BE3D";
-  ctx.font = "800 260px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText(String(data.streak), padX + 40, cardY + 80);
-  ctx.shadowBlur = 0;
-
-  // "days streak" label
-  const streakNumW = ctx.measureText(String(data.streak)).width;
-  ctx.fillStyle = "rgba(232, 244, 237, 0.6)";
-  ctx.font = "500 40px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText("DAYS", padX + 40 + streakNumW + 20, cardY + 280);
-  ctx.fillText("STREAK", padX + 40 + streakNumW + 20, cardY + 325);
-
-  // Best streak (bottom right of card)
-  ctx.textAlign = "right";
-  ctx.fillStyle = "rgba(232, 244, 237, 0.5)";
-  ctx.font = "500 22px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText("PERSONAL BEST", W - padX - 50, cardY + cardH - 90);
-  ctx.fillStyle = "#FBF9F2";
-  ctx.font = "700 56px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText(`${data.bestStreak} days`, W - padX - 50, cardY + cardH - 55);
+  // Sensible defaults for canvas state
+  ctx.textBaseline = "alphabetic";
   ctx.textAlign = "left";
 
-  // ===== Stats row =====
-  const statsY = cardY + cardH + 50;
-  const statW = (W - padX * 2 - 40) / 3;
-  const statH = 180;
+  drawSkeleton(ctx);
 
-  drawStatBox(ctx, padX, statsY, statW, statH, "LEVEL", String(data.level), `${data.totalXp} XP`, "#46F2C0");
-  drawStatBox(ctx, padX + statW + 20, statsY, statW, statH, "TODAY", `+${data.todayXp}`, "XP earned", "#F5BE3D");
-
-  // Prayer completion ring
-  const ringX = padX + (statW + 20) * 2;
-  roundRect(ctx, ringX, statsY, statW, statH, 24);
-  ctx.fillStyle = "rgba(2, 24, 16, 0.6)";
-  ctx.fill();
-  ctx.strokeStyle = "rgba(70, 242, 192, 0.18)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  ctx.fillStyle = "rgba(232, 244, 237, 0.55)";
-  ctx.font = "600 20px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText("PRAYERS", ringX + 24, statsY + 24);
-
-  const ringCx = ringX + statW / 2;
-  const ringCy = statsY + statH / 2 + 15;
-  drawProgressRing(ctx, ringCx, ringCy, 45, prayerPct, prayerPct >= 100 ? "#F5BE3D" : "#46F2C0");
-
-  ctx.fillStyle = prayerPct >= 100 ? "#F5BE3D" : "#FBF9F2";
-  ctx.font = "700 36px ui-sans-serif, system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(`${data.prayedCount}/${data.prayerTarget}`, ringCx, ringCy + 12);
-  ctx.textAlign = "left";
-
-  // ===== Motivational quote =====
-  const quoteY = statsY + statH + 70;
-  ctx.fillStyle = "rgba(232, 244, 237, 0.5)";
-  ctx.font = "italic 400 28px ui-serif, Georgia, serif";
-  ctx.fillText("\u201CSebaik-baik amal adalah yang paling", padX, quoteY);
-  ctx.fillText("konsisten, meskipun sedikit.\u201D", padX, quoteY + 38);
-  ctx.font = "500 22px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillStyle = "rgba(70, 242, 192, 0.7)";
-  ctx.fillText("— HR. Bukhari & Muslim", padX, quoteY + 90);
-
-  // ===== Date =====
-  const dateY = quoteY + 150;
-  if (data.gregorian) {
-    ctx.fillStyle = "rgba(232, 244, 237, 0.65)";
-    ctx.font = "500 26px ui-sans-serif, system-ui, sans-serif";
-    ctx.fillText(data.gregorian, padX, dateY);
-  }
-  if (data.hijri) {
-    ctx.fillStyle = "rgba(70, 242, 192, 0.8)";
-    ctx.font = "500 24px ui-sans-serif, system-ui, sans-serif";
-    ctx.fillText(data.hijri, padX, dateY + 36);
+  switch (data.cardType ?? "weekly") {
+    case "achievement":
+      drawAchievementCard(ctx, data);
+      break;
+    case "milestone":
+      drawMilestoneCard(ctx, data);
+      break;
+    case "weekly":
+    default:
+      drawWeeklyCard(ctx, data);
+      break;
   }
 
-  // ===== Footer CTA =====
-  const footY = H - 100;
-  ctx.fillStyle = "rgba(70, 242, 192, 0.9)";
-  ctx.font = "700 26px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText("mihrab.app", padX, footY);
-
-  ctx.textAlign = "right";
-  ctx.fillStyle = "rgba(232, 244, 237, 0.5)";
-  ctx.font = "500 22px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText("Join the journey ✨", W - padX, footY);
-  ctx.textAlign = "left";
-
-  // Separator line
-  ctx.strokeStyle = "rgba(70, 242, 192, 0.2)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padX, footY - 30);
-  ctx.lineTo(W - padX, footY - 30);
-  ctx.stroke();
-
-  return new Promise((resolve, reject) => {
+  return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (!blob) reject(new Error("Failed to generate image."));
@@ -335,32 +455,7 @@ export async function renderShareCard(data: ShareCardData): Promise<Blob> {
   });
 }
 
-function drawStatBox(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, label: string, value: string, sub: string, accent: string) {
-  ctx.save();
-  roundRect(ctx, x, y, w, h, 24);
-  ctx.fillStyle = "rgba(2, 24, 16, 0.6)";
-  ctx.fill();
-  ctx.strokeStyle = "rgba(70, 242, 192, 0.18)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  ctx.fillStyle = "rgba(232, 244, 237, 0.55)";
-  ctx.font = "600 20px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText(label, x + 24, y + 24);
-
-  ctx.fillStyle = accent;
-  ctx.font = "700 72px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText(value, x + 24, y + 55);
-
-  ctx.fillStyle = "rgba(232, 244, 237, 0.45)";
-  ctx.font = "400 20px ui-sans-serif, system-ui, sans-serif";
-  ctx.fillText(sub, x + 24, y + h - 30);
-  ctx.restore();
-}
-
-/**
- * Trigger download of a blob as a file.
- */
+/** Trigger download of a blob as a file. */
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -394,11 +489,11 @@ export async function shareOrDownload(
       await navigator.share({
         files: [file],
         title: "Mihrab",
-        text: text ?? "My daily worship progress 💚 #Mihrab",
+        text: text ?? "My weekly Mihrab progress \u00B7 #Mihrab",
       });
       return "shared";
     } catch {
-      // user cancelled
+      // user cancelled — fall through to download
     }
   }
   downloadBlob(blob, filename);
